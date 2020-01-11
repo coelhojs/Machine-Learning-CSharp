@@ -14,10 +14,10 @@
    limitations under the License.
 ******************************************************************************/
 
-using Newtonsoft.Json;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
-namespace Machine_Learning.Utility
+namespace MachineLearningToolkit.ObjectDetection.Utility
 {
     public class PbtxtItem
     {

@@ -1,69 +1,49 @@
-/*****************************************************************************
-   Copyright 2018 The TensorFlow.NET Authors. All Rights Reserved.
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-******************************************************************************/
-
-using NumSharp;
-using System;
-using System.IO;
-using Tensorflow;
-using Machine_Learning.Utility;
+using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
+using System.IO;
 using System.Linq;
+using NumSharp;
+using Tensorflow;
 using static Tensorflow.Binding;
+using MachineLearningToolkit.ObjectDetection.Utility;
 
-namespace Machine_Learning
+namespace MachineLearningToolkit.ObjectDetection
 {
     public class ObjectDetection
     {
-        public float MIN_SCORE = 0.5f;
-
-        string ModelDir = "D:\\Desenvolvimento\\3.Projetos\\Machine Learning\\Object Detection\\Models\\vera_poles_trees";
-        string ImageDir = "C:\\Machine-Learning-Models-Server\\test_images";
-        string GraphFile = "frozen_inference_graph.pb";
-        string LabelFile = "label_map.pbtxt";
-        string PicFile = "C:\\Machine-Learning-Models-Server\\test_images\\1.png";
-
-        public ObjectDetection(){
-
-        }
-
-        NDArray imgArr;
-
-        public bool Run()
+        private const float MIN_SCORE = 0.7f;
+        private Graph Graph;
+        private NDArray ImgArr;
+        private string LabelFile;
+        private string ModelDir;
+        private Session Session;
+        public ObjectDetection(string modelDir, string graphFile = "frozen_inference_graph.pb", string labelFile = "label_map.pbtxt")
         {
-            // read in the input image
-            imgArr = ReadTensorFromImageFile(Path.GetFullPath(PicFile));
-
-            var graph = ImportGraph();
-
-            using (var sess = tf.Session(graph))
-                Predict(sess);
-
-            return true;
+            ModelDir = modelDir;
+            Graph = ImportGraph(graphFile);
+            LabelFile = labelFile;
+            Session = tf.Session(Graph);
         }
 
-        public Graph ImportGraph()
+        public InferenceResult Inference(string imagePath)
+        {
+            ImgArr = ReadTensorFromImageFile(Path.GetFullPath(imagePath));
+
+            using (var sess = tf.Session(Graph))
+                return Predict(sess, imagePath);
+
+
+        }
+
+        private Graph ImportGraph(string graphFile)
         {
             var graph = new Graph().as_default();
-            graph.Import(Path.Join(ModelDir, GraphFile));
+            graph.Import(Path.Join(ModelDir, graphFile));
 
             return graph;
         }
 
-        public void Predict(Session sess)
+        private InferenceResult Predict(Session sess, string imagePath)
         {
             var graph = tf.get_default_graph();
 
@@ -74,9 +54,9 @@ namespace Machine_Learning
             Tensor imgTensor = graph.OperationByName("image_tensor");
             Tensor[] outTensorArr = new Tensor[] { tensorNum, tensorBoxes, tensorScores, tensorClasses };
 
-            var results = sess.run(outTensorArr, new FeedItem(imgTensor, imgArr));
+            var results = sess.run(outTensorArr, new FeedItem(imgTensor, ImgArr));
 
-            buildOutputImage(results);
+            return ParseInferenceResults(results, imagePath);
         }
 
         private NDArray ReadTensorFromImageFile(string file_name)
@@ -92,61 +72,56 @@ namespace Machine_Learning
                 return sess.run(dims_expander);
         }
 
-        private void buildOutputImage(NDArray[] resultArr)
+        private InferenceResult ParseInferenceResults(NDArray[] resultArr, string imagePath)
         {
+            var detectionsList = new List<DetectionVO>();
+
             // get pbtxt items
             PbtxtItems pbTxtItems = PbtxtParser.ParsePbtxtFile(Path.Join(ModelDir, LabelFile));
-
             // get bitmap
-            Bitmap bitmap = new Bitmap(Path.GetFullPath(PicFile));
+            Bitmap bitmap = new Bitmap(Path.GetFullPath(imagePath));
 
-            var scores = resultArr[2].AsIterator<float>();
-            var boxes = resultArr[1].GetData<float>();
-            var id = np.squeeze(resultArr[3]).GetData<float>();
-            for (int i=0; i< scores.size; i++)
+            var detectionClasses = np.squeeze(resultArr[3]).GetData<float>();
+            var detectionScores = resultArr[2].AsIterator<float>();
+            var detectionBoxes = resultArr[1].GetData<float>().ToArray();
+
+            var scores = detectionScores.Where(score => score > MIN_SCORE).ToArray();
+            var classes = detectionClasses.Take(scores.Length).ToArray();
+
+            for (int i = 0; i < scores.Length; i++)
             {
-                float score = scores.MoveNext();
-                if (score > MIN_SCORE)
+                detectionsList.Add(new DetectionVO()
                 {
-                    float top = boxes[i * 4] * bitmap.Height;
-                    float left = boxes[i * 4 + 1] * bitmap.Width;
-                    float bottom = boxes[i * 4 + 2] * bitmap.Height;
-                    float right = boxes[i * 4 + 3] * bitmap.Width;
-
-                    Rectangle rect = new Rectangle()
-                    {
-                        X = (int)left,
-                        Y = (int)top,
-                        Width = (int)(right - left),
-                        Height = (int)(bottom - top)
-                    };
-
-                    string name = pbTxtItems.items.Where(w => w.id == id[i]).Select(s=>s.display_name).FirstOrDefault();
-
-                    drawObjectOnBitmap(bitmap, rect, score, name);
-                }
+                    BoundingBox = CreateReactangle(bitmap, detectionBoxes, i),
+                    Class = pbTxtItems.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),
+                    ImagePath = imagePath,
+                    Score = scores[i]
+                });
             }
 
-            string path = Path.Join(ImageDir, "output.jpg");
-            bitmap.Save(path);
-            Console.WriteLine($"Processed image is saved as {path}");
+            return new InferenceResult()
+            {
+                NumDetections = scores.Length,
+                Results = detectionsList
+            };
         }
 
-        private void drawObjectOnBitmap(Bitmap bmp, Rectangle rect, float score, string name)
+        private Rectangle CreateReactangle(Bitmap bitmap, float[] boxes, int i)
         {
-            using (Graphics graphic = Graphics.FromImage(bmp))
-            {
-                graphic.SmoothingMode = SmoothingMode.AntiAlias;
-                
-                using (Pen pen = new Pen(Color.Red, 2))
-                {
-                    graphic.DrawRectangle(pen, rect);
+            float top = boxes[i * 4] * bitmap.Height;
+            float left = boxes[i * 4 + 1] * bitmap.Width;
+            float bottom = boxes[i * 4 + 2] * bitmap.Height;
+            float right = boxes[i * 4 + 3] * bitmap.Width;
 
-                    Point p = new Point(rect.Right + 5, rect.Top + 5);
-                    string text = string.Format("{0}:{1}%", name, (int)(score * 100));
-                    graphic.DrawString(text, new Font("Verdana", 8), Brushes.Red, p);
-                }
-            }
+            Rectangle rect = new Rectangle()
+            {
+                X = (int)left,
+                Y = (int)top,
+                Width = (int)(right - left),
+                Height = (int)(bottom - top)
+            };
+
+            return rect;
         }
     }
 }

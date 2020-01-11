@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Machine_Learning.Utility
+namespace MachineLearningToolkit.ObjectDetection.Utility
 {
     public static class ArrayShuffling
     {

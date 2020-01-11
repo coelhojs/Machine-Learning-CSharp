@@ -1,15 +1,15 @@
-﻿using System;
-using Machine_Learning;
+﻿namespace MachineLearningToolkit.ObjectDetection
 
-namespace Object_Detection
 {
     class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
-            var detection = new ObjectDetection();
-            detection.Run();
+            string ModelDir = "C:\\Machine-Learning-Models-Server\\models_inference\\vera_poles_trees";
+            string PicFile = "C:\\Machine-Learning-Models-Server\\test_images\\1.png";
+
+            var detection = new ObjectDetection(ModelDir);
+            InferenceResult result = detection.Inference(PicFile);
         }
     }
 }

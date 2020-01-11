@@ -14,17 +14,17 @@
    limitations under the License.
 ******************************************************************************/
 
-using ICSharpCode.SharpZipLib.Core;
-using ICSharpCode.SharpZipLib.GZip;
-using ICSharpCode.SharpZipLib.Tar;
 using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ICSharpCode.SharpZipLib.Core;
+using ICSharpCode.SharpZipLib.GZip;
+using ICSharpCode.SharpZipLib.Tar;
 
-namespace Machine_Learning.Utility
+namespace MachineLearningToolkit.ObjectDetection.Utility
 {
     public class Compress
     {
