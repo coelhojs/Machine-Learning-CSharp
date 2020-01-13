@@ -1,0 +1,7 @@
+ObjectDetection.exe --modelDir C:\Machine-Learning-Models-Server\models_inference\vera_poles_trees --listFile C:\Machine-Learning-Models-Server\test_images\637143892503681651 --outputDir C:\Machine-Learning-Models-Server\test_images
+
+
+
+
+
+ObjectDetection.exe --modelDir C:\development\vera-434\src\Business\Smarttools.MachineLearning\MachineLearningModels\vera_poles_trees --listFile C:\development\637143892503681651 --outputDir C:\development

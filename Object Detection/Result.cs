@@ -2,9 +2,10 @@
 
 namespace MachineLearningToolkit.ObjectDetection
 {
-    public class InferenceResult
+    public class Result
     {
         public int NumDetections { get; set; }
-        public List<DetectionVO> Results { get; set; }
+        public List<Inference> Results { get; set; }
+
     }
 }

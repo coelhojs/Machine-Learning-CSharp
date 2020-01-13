@@ -1,11 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using MachineLearningToolkit.ObjectDetection.Utility;
 using NumSharp;
 using Tensorflow;
 using static Tensorflow.Binding;
-using MachineLearningToolkit.ObjectDetection.Utility;
 
 namespace MachineLearningToolkit.ObjectDetection
 {
@@ -13,37 +14,59 @@ namespace MachineLearningToolkit.ObjectDetection
     {
         private const float MIN_SCORE = 0.7f;
         private Graph Graph;
-        private NDArray ImgArr;
-        private string LabelFile;
+        private PbtxtItems Labels;
         private string ModelDir;
-        private Session Session;
         public ObjectDetection(string modelDir, string graphFile = "frozen_inference_graph.pb", string labelFile = "label_map.pbtxt")
         {
             ModelDir = modelDir;
             Graph = ImportGraph(graphFile);
-            LabelFile = labelFile;
-            Session = tf.Session(Graph);
+            Labels = LoadLabels(modelDir, labelFile);
         }
 
-        public InferenceResult Inference(string imagePath)
+        public List<Result> Inference(string listPath)
         {
-            ImgArr = ReadTensorFromImageFile(Path.GetFullPath(imagePath));
+            try
+            {
+                List<Result> Results = new List<Result>();
 
-            using (var sess = tf.Session(Graph))
-                return Predict(sess, imagePath);
+                var list = JsonUtil<List<string>>.ReadJsonFile(listPath);
 
+                foreach (var image in list)
+                {
+                    NDArray imgArr = ReadTensorFromImageFile(Path.GetFullPath(image));
 
+                    using (var sess = tf.Session(Graph))
+                        Results.Add(Predict(sess, imgArr, image));
+                }
+                return Results;
+            }
+            catch (FileNotFoundException ex)
+            {
+                throw new Exception($"Arquivo nao localizado {ex.Message}");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         private Graph ImportGraph(string graphFile)
         {
-            var graph = new Graph().as_default();
-            graph.Import(Path.Join(ModelDir, graphFile));
+            try
+            {
+                var graph = new Graph().as_default();
+                graph.Import(Path.Combine(ModelDir, graphFile));
 
-            return graph;
+                return graph;
+            }
+            catch (Exception)
+            {
+                throw new Exception("Nao foi possivel localizar o arquivo do modelo.\nInforme o path para o arquivo .pb " +
+                    "com o argumento --graphFile");
+            }
         }
 
-        private InferenceResult Predict(Session sess, string imagePath)
+        private Result Predict(Session sess, NDArray imgArr, string image)
         {
             var graph = tf.get_default_graph();
 
@@ -54,9 +77,9 @@ namespace MachineLearningToolkit.ObjectDetection
             Tensor imgTensor = graph.OperationByName("image_tensor");
             Tensor[] outTensorArr = new Tensor[] { tensorNum, tensorBoxes, tensorScores, tensorClasses };
 
-            var results = sess.run(outTensorArr, new FeedItem(imgTensor, ImgArr));
+            var results = sess.run(outTensorArr, new FeedItem(imgTensor, imgArr));
 
-            return ParseInferenceResults(results, imagePath);
+            return ParseResults(results, image);
         }
 
         private NDArray ReadTensorFromImageFile(string file_name)
@@ -72,12 +95,10 @@ namespace MachineLearningToolkit.ObjectDetection
                 return sess.run(dims_expander);
         }
 
-        private InferenceResult ParseInferenceResults(NDArray[] resultArr, string imagePath)
+        private Result ParseResults(NDArray[] resultArr, string imagePath)
         {
-            var detectionsList = new List<DetectionVO>();
+            var detectionsList = new List<Inference>();
 
-            // get pbtxt items
-            PbtxtItems pbTxtItems = PbtxtParser.ParsePbtxtFile(Path.Join(ModelDir, LabelFile));
             // get bitmap
             Bitmap bitmap = new Bitmap(Path.GetFullPath(imagePath));
 
@@ -90,20 +111,36 @@ namespace MachineLearningToolkit.ObjectDetection
 
             for (int i = 0; i < scores.Length; i++)
             {
-                detectionsList.Add(new DetectionVO()
+                detectionsList.Add(new Inference()
                 {
                     BoundingBox = CreateReactangle(bitmap, detectionBoxes, i),
-                    Class = pbTxtItems.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),
-                    ImagePath = imagePath,
+                    Class = Labels.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),
+                    Image = imagePath,
                     Score = scores[i]
                 });
             }
 
-            return new InferenceResult()
+            return new Result()
             {
                 NumDetections = scores.Length,
                 Results = detectionsList
             };
+        }
+
+        private PbtxtItems LoadLabels(string modelDir, string labelFile)
+        {
+            try
+            {
+                // get pbtxt items
+                return PbtxtParser.ParsePbtxtFile(Path.Combine(modelDir, labelFile));
+            }
+            catch (Exception)
+            {
+                throw new Exception("Nao foi possivel carregar o arquivo de labels." +
+                    "\nVerifique o formato do arquivo e " +
+                    "informe o path para o arquivo .pbtxt " +
+                    "com o argumento --labelFile");
+            }
         }
 
         private Rectangle CreateReactangle(Bitmap bitmap, float[] boxes, int i)

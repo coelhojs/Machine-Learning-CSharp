@@ -2,14 +2,11 @@
 
 namespace MachineLearningToolkit.ObjectDetection
 {
-    public class DetectionVO
+    public class Inference
     {
         public Rectangle BoundingBox { get; set; }
-
         public string Class { get; set; }
-
-        public string ImagePath { get; set; }
-
+        public string Image { get; set; }
         public float Score { get; set; }
     }
 }

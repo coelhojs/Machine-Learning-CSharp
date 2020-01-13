@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using MachineLearningToolkit.ImageClassification.Utility;
 
-namespace MachineLearningToolkit.ObjectDetection
+namespace MachineLearningToolkit.ImageClassification
 {
     public class Program
     {
+        private static string graphFile = null;
+        private static string inputLayer = null;
+        private static string labelFile = null;
         private static string listFile = "";
         private static string modelDir = "";
         private static string outputDir = "";
-        private static string graphFile = null;
-        private static string labelFile = null;
+        private static string outputLayer = null;
 
         static void Main(string[] args)
         {
@@ -45,28 +48,34 @@ namespace MachineLearningToolkit.ObjectDetection
                         case "--labelFile":
                             labelFile = args[i + 1];
                             break;
+                        case "--inputLayer":
+                            inputLayer = args[i + 1];
+                            break;
+                        case "--outputLayer":
+                            outputLayer = args[i + 1];
+                            break;
                     }
                 }
 
                 if (string.IsNullOrEmpty(modelDir) || string.IsNullOrEmpty(outputDir) || string.IsNullOrEmpty(listFile))
                     Console.WriteLine("Informe os parametros --modelDir, --listFile --outputDir");
 
-                ObjectDetection test;
+                ImageClassification test;
 
                 if (string.IsNullOrEmpty(graphFile) && string.IsNullOrEmpty(labelFile))
                 {
-                    test = new ObjectDetection(modelDir);
+                    test = new ImageClassification(modelDir);
                 }
                 else
                 {
-                    test = new ObjectDetection(modelDir, graphFile, labelFile);
+                    test = new ImageClassification(modelDir, graphFile, labelFile);
                 }
 
-                var results = test.Inference(listFile);
+                var results = test.Classify(listFile);
 
                 string outputFile = Path.Combine(outputDir, DateTime.Now.Ticks.ToString());
 
-                JsonUtil<List<Result>>.WriteJsonOnFile(results, outputFile);
+                JsonUtil<List<Classification>>.WriteJsonOnFile(results, outputFile);
 
                 Console.WriteLine(outputFile);
             }
