@@ -83,8 +83,9 @@ namespace MachineLearningToolkit
 
             return new ClassificationInference()
             {
-                Image = image,
-                Classifications = classificationResults
+                Classifications = classificationResults,
+                DateTime = DateTime.Now,
+                Image = image
             };
         }
 

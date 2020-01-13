@@ -18,7 +18,7 @@ namespace Tests
         {
             List<string> testList = new List<string>();
 
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < 3; i++)
             {
                 testList.Add("C:\\Machine-Learning-Models-Server\\test_images\\1.png");
             }
