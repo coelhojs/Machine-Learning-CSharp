@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace MachineLearningToolkit.ObjectDetection
+namespace MachineLearningToolkit
 {
     public class Program
     {
+        private static string graphFile = null;
+        private static string labelFile = null;
         private static string listFile = "";
         private static string modelDir = "";
         private static string outputDir = "";
-        private static string graphFile = null;
-        private static string labelFile = null;
 
         static void Main(string[] args)
         {
@@ -51,24 +51,51 @@ namespace MachineLearningToolkit.ObjectDetection
                 if (string.IsNullOrEmpty(modelDir) || string.IsNullOrEmpty(outputDir) || string.IsNullOrEmpty(listFile))
                     Console.WriteLine("Informe os parametros --modelDir, --listFile --outputDir");
 
-                ObjectDetection test;
-
-                if (string.IsNullOrEmpty(graphFile) && string.IsNullOrEmpty(labelFile))
+                if (args[0] == "ObjectDetection")
                 {
-                    test = new ObjectDetection(modelDir);
+                    ObjectDetection test;
+
+                    if (string.IsNullOrEmpty(graphFile) && string.IsNullOrEmpty(labelFile))
+                    {
+                        test = new ObjectDetection(modelDir);
+                    }
+                    else
+                    {
+                        test = new ObjectDetection(modelDir, graphFile, labelFile);
+                    }
+
+                    var results = test.Inference(listFile);
+
+                    string outputFile = Path.Combine(outputDir, DateTime.Now.Ticks.ToString());
+
+                    JsonUtil<List<Result>>.WriteJsonOnFile(results, outputFile);
+
+                    Console.WriteLine(outputFile);
                 }
-                else
+                else if (args[0] == "ImageClassification")
                 {
-                    test = new ObjectDetection(modelDir, graphFile, labelFile);
+                    ImageClassification test;
+
+                    if (string.IsNullOrEmpty(graphFile) && string.IsNullOrEmpty(labelFile))
+                    {
+                        test = new ImageClassification(modelDir);
+                    }
+                    else
+                    {
+                        test = new ImageClassification(modelDir, graphFile, labelFile);
+                    }
+
+                    var results = test.Classify(listFile);
+
+                    string outputFile = Path.Combine(outputDir, DateTime.Now.Ticks.ToString());
+
+                    JsonUtil<List<ClassificationInference>>.WriteJsonOnFile(results, outputFile);
+
+                    Console.WriteLine(outputFile);
                 }
 
-                var results = test.Inference(listFile);
 
-                string outputFile = Path.Combine(outputDir, DateTime.Now.Ticks.ToString());
 
-                JsonUtil<List<Result>>.WriteJsonOnFile(results, outputFile);
-
-                Console.WriteLine(outputFile);
             }
 
             catch (IndexOutOfRangeException)

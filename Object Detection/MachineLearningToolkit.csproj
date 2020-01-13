@@ -3,11 +3,20 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>Object_Detection</RootNamespace>
+    <RootNamespace>MachineLearningToolkit</RootNamespace>
     <Platforms>x64</Platforms>
-    <ApplicationIcon />
+    <ApplicationIcon>scisharp.ico</ApplicationIcon>
     <StartupObject />
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <Authors>Cristiano Coelho Souza</Authors>
+    <Company>Concert Technologies SA</Company>
+    <PackageId>Machine Learning Toolkit</PackageId>
+    <Product>Machine Learning Toolkit</Product>
+    <PackageIcon>SciSharp.png</PackageIcon>
+    <PackageIconUrl />
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryUrl>https://github.com/coelhojs/Machine-Learning-CSharp</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +30,13 @@
     <PackageReference Include="SharpZipLib" Version="1.2.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
     <PackageReference Include="TensorFlow.NET" Version="0.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="C:\Users\ccoel\OneDrive\Área de Trabalho\SciSharp.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

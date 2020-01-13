@@ -14,8 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ImageClassification\ImageClassification.csproj" />
-    <ProjectReference Include="..\Object Detection\ObjectDetection.csproj" />
+    <ProjectReference Include="..\Object Detection\MachineLearningToolkit.csproj" />
   </ItemGroup>
 
 </Project>

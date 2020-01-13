@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 
-namespace MachineLearningToolkit.ObjectDetection.Utility
+namespace MachineLearningToolkit.Utility
 {
     public class CoNLLDataset
     {

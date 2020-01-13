@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 
-namespace MachineLearningToolkit.ObjectDetection
+namespace MachineLearningToolkit
 {
     public class Result
     {
         public int NumDetections { get; set; }
-        public List<Inference> Results { get; set; }
+        public List<DetectionInference> Results { get; set; }
 
     }
 }

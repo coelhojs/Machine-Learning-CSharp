@@ -17,7 +17,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace MachineLearningToolkit.ObjectDetection.Utility
+namespace MachineLearningToolkit.Utility
 {
     public class PbtxtItem
     {

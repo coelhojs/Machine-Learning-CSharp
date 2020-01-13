@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MachineLearningToolkit.ImageClassification;
-using MachineLearningToolkit.ImageClassification.Utility;
+using MachineLearningToolkit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests
@@ -41,11 +40,11 @@ namespace Tests
             return testList;
         }
 
-        public string InferenceJsonFileGenerator(List<Classification> inferenceResults)
+        public string InferenceJsonFileGenerator(List<ClassificationInference> inferenceResults)
         {
             string resultsFile = Path.Combine(OutputDir, DateTime.Now.Ticks.ToString());
 
-            JsonUtil<List<Classification>>.WriteJsonOnFile(inferenceResults, resultsFile);
+            JsonUtil<List<ClassificationInference>>.WriteJsonOnFile(inferenceResults, resultsFile);
 
             Assert.IsNotNull(Path.GetFullPath(resultsFile));
 
@@ -53,9 +52,9 @@ namespace Tests
         }
 
         [TestMethod]
-        public List<Classification> InferenceJsonFileReader(string file)
+        public List<ClassificationInference> InferenceJsonFileReader(string file)
         {
-            List<Classification> testList = JsonUtil<List<Classification>>.ReadJsonFile(file);
+            List<ClassificationInference> testList = JsonUtil<List<ClassificationInference>>.ReadJsonFile(file);
 
             Assert.IsNotNull(testList);
 

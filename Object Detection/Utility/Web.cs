@@ -21,7 +21,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MachineLearningToolkit.ObjectDetection.Utility
+namespace MachineLearningToolkit.Utility
 {
     public class Web
     {

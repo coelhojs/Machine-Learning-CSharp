@@ -1,8 +1,8 @@
 ﻿using System.Drawing;
 
-namespace MachineLearningToolkit.ObjectDetection
+namespace MachineLearningToolkit
 {
-    public class Inference
+    public class DetectionInference
     {
         public Rectangle BoundingBox { get; set; }
         public string Class { get; set; }

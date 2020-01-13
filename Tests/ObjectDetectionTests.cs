@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MachineLearningToolkit.ObjectDetection;
+using MachineLearningToolkit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests

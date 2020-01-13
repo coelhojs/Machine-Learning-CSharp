@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using MachineLearningToolkit.ObjectDetection.Utility;
+using MachineLearningToolkit.Utility;
 using NumSharp;
 using Tensorflow;
 using static Tensorflow.Binding;
 
-namespace MachineLearningToolkit.ObjectDetection
+namespace MachineLearningToolkit
 {
     public class ObjectDetection
     {
@@ -97,7 +97,7 @@ namespace MachineLearningToolkit.ObjectDetection
 
         private Result ParseResults(NDArray[] resultArr, string imagePath)
         {
-            var detectionsList = new List<Inference>();
+            var detectionsList = new List<DetectionInference>();
 
             // get bitmap
             Bitmap bitmap = new Bitmap(Path.GetFullPath(imagePath));
@@ -111,7 +111,7 @@ namespace MachineLearningToolkit.ObjectDetection
 
             for (int i = 0; i < scores.Length; i++)
             {
-                detectionsList.Add(new Inference()
+                detectionsList.Add(new DetectionInference()
                 {
                     BoundingBox = CreateReactangle(bitmap, detectionBoxes, i),
                     Class = Labels.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),

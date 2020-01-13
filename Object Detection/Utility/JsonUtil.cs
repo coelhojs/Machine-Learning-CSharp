@@ -2,7 +2,7 @@
 using System.IO;
 using Newtonsoft.Json;
 
-namespace MachineLearningToolkit.ObjectDetection
+namespace MachineLearningToolkit
 {
     public class JsonUtil<TEntity>
     {

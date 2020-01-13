@@ -24,7 +24,7 @@ using ICSharpCode.SharpZipLib.Core;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
 
-namespace MachineLearningToolkit.ObjectDetection.Utility
+namespace MachineLearningToolkit.Utility
 {
     public class Compress
     {
