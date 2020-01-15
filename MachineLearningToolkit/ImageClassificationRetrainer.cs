@@ -23,10 +23,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Tensorflow;
-using TensorFlowNET.Examples.Utility;
+using MachineLearningToolkit.Utility;
 using static Tensorflow.Binding;
 
-namespace TensorFlowNET.Examples
+namespace MachineLearningToolkit
 {
     /// <summary>
     /// In this tutorial, we will reuse the feature extraction capabilities from powerful image classifiers trained on ImageNet 
@@ -35,15 +35,8 @@ namespace TensorFlowNET.Examples
     /// 
     /// https://www.tensorflow.org/hub/tutorials/image_retraining
     /// </summary>
-    public class RetrainClassifierWithInceptionV3 : IExample
+    public class ImageClassificationRetrainer
     {
-        public int Priority => 16;
-
-        public bool Enabled { get; set; } = true;
-        public bool IsImportingGraph { get; set; } = true;
-
-        public string Name => "Retrain Classifier With InceptionV3";
-
         const string data_dir = "retrain_images";
         string summaries_dir = Path.Join(data_dir, "retrain_logs");
         string image_dir = Path.Join(data_dir, "flower_photos");
@@ -92,7 +85,7 @@ namespace TensorFlowNET.Examples
 
             #endregion
 
-            var graph = IsImportingGraph ? ImportGraph() : BuildGraph();
+            var graph = ImportGraph();
 
             using (var sess = tf.Session(graph))
             {
@@ -282,7 +275,7 @@ namespace TensorFlowNET.Examples
             tf.train.import_meta_graph("graph/InceptionV3.meta");
             var vars = tf.get_collection<ResourceVariable>(tf.GraphKeys.GLOBAL_VARIABLES);
             Tensor resized_input_tensor = graph.OperationByName(input_tensor_name); //tf.placeholder(tf.float32, new TensorShape(-1, height, width, 3));
-                                                                                // var m = hub.Module(module_spec);
+                                                                                    // var m = hub.Module(module_spec);
             Tensor bottleneck_tensor = graph.OperationByName("module_apply_default/hub_output/feature_vector/SpatialSqueeze");// m(resized_input_tensor);
             var wants_quantization = false;
             return (graph, bottleneck_tensor, resized_input_tensor, wants_quantization);
@@ -384,7 +377,7 @@ namespace TensorFlowNET.Examples
         {
             int how_many_bottlenecks = 0;
             var kvs = image_lists.ToArray();
-            var categories = new string[] {"training", "testing", "validation"};
+            var categories = new string[] { "training", "testing", "validation" };
             Parallel.For(0, kvs.Length, i =>
             {
                 var (label_name, label_lists) = kvs[i];
@@ -607,11 +600,6 @@ namespace TensorFlowNET.Examples
             return graph;
         }
 
-        public Graph BuildGraph()
-        {
-            throw new NotImplementedException();
-        }
-
         public void Train(Session sess)
         {
             var sw = new Stopwatch();
@@ -671,7 +659,7 @@ namespace TensorFlowNET.Examples
                     (float train_accuracy, float cross_entropy_value) = sess.run((evaluation_step, cross_entropy),
                         (bottleneck_input, train_bottlenecks),
                         (ground_truth_input, train_ground_truth));
-                    print($"{DateTime.Now}: Step {i + 1}: Train accuracy = {train_accuracy * 100}%,  Cross entropy = {cross_entropy_value.ToString("G4")}");
+                    Console.WriteLine($"{DateTime.Now}: Passo {i + 1}: Precisão do treinamento = {train_accuracy * 100}%,  Custo = {cross_entropy_value.ToString("G4")}");
 
                     var (validation_bottlenecks, validation_ground_truth, _) = get_random_cached_bottlenecks(
                         sess, image_lists, validation_batch_size, "validation",
@@ -686,7 +674,7 @@ namespace TensorFlowNET.Examples
                         (ground_truth_input, validation_ground_truth));
 
                     // validation_writer.add_summary(validation_summary, i);
-                    print($"{DateTime.Now}: Step {i + 1}: Validation accuracy = {validation_accuracy * 100}% (N={len(validation_bottlenecks)}) {sw.ElapsedMilliseconds}ms");
+                    Console.WriteLine($"{DateTime.Now}: Passo {i + 1}: Precisão da validação = {validation_accuracy * 100}% (N={len(validation_bottlenecks)}) {sw.ElapsedMilliseconds}ms");
                     sw.Restart();
                 }
 
@@ -709,7 +697,7 @@ namespace TensorFlowNET.Examples
 
             // Write out the trained graph and labels with the weights stored as
             // constants.
-            print($"Save final result to : {output_graph}");
+            Console.WriteLine($"Arquivos finais do treinamento salvos em: {output_graph}");
             save_graph_to_file(output_graph, class_count);
             File.WriteAllText(output_labels, string.Join("\n", image_lists.Keys));
         }
@@ -747,7 +735,7 @@ namespace TensorFlowNET.Examples
                 var result = sess.run(output, (input, fileBytes));
                 var prob = np.squeeze(result);
                 var idx = np.argmax(prob);
-                print($"Prediction result: [{labels[idx]} {prob[idx]}] for {img_path}.");
+                print($"Resultado do teste: [{labels[idx]} {prob[idx]}] for {img_path}.");
             }
         }
 
