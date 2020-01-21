@@ -11,6 +11,9 @@ namespace MachineLearningToolkit
         private static string listFile = "";
         private static string modelDir = "";
         private static string outputDir = "";
+        private static string trainDir = "";
+        private static string trainImagesDir = "";
+        private static int trainingSteps;
 
         static void Main(string[] args)
         {
@@ -66,7 +69,7 @@ namespace MachineLearningToolkit
 
                     var results = test.Inference(listFile);
 
-                    string outputFile = Path.Combine(outputDir, DateTime.Now.Ticks.ToString());
+                    string outputFile = Path.Combine(outputDir, "Result.ObjectDetection");
 
                     JsonUtil<List<Result>>.WriteJsonOnFile(results, outputFile);
 
@@ -87,24 +90,25 @@ namespace MachineLearningToolkit
 
                     var results = test.Classify(listFile);
 
-                    string outputFile = Path.Combine(outputDir, DateTime.Now.Ticks.ToString());
+                    string outputFile = Path.Combine(outputDir, "Result.ImageClassification");
 
                     JsonUtil<List<ClassificationInference>>.WriteJsonOnFile(results, outputFile);
 
                     Console.WriteLine(outputFile);
                 }
+                else if (args[0] == "ImageClassificationRetrainer")
+                {
 
-
-
+                }
             }
 
             catch (IndexOutOfRangeException)
             {
                 Console.WriteLine("Verifique o comando executado");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex.Message);
+                throw;
             }
         }
     }
