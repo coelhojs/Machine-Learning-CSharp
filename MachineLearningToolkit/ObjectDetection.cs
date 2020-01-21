@@ -27,7 +27,7 @@ namespace MachineLearningToolkit
         {
             try
             {
-                List<Result> Results = new List<Result>();
+                var Results = new List<Result>();
 
                 var list = JsonUtil<List<string>>.ReadJsonFile(listPath);
 
@@ -39,10 +39,6 @@ namespace MachineLearningToolkit
                         Results.Add(Predict(sess, imgArr, image));
                 }
                 return Results;
-            }
-            catch (FileNotFoundException ex)
-            {
-                throw new Exception($"Arquivo nao localizado {ex.Message}");
             }
             catch (Exception)
             {
@@ -68,18 +64,32 @@ namespace MachineLearningToolkit
 
         private Result Predict(Session sess, NDArray imgArr, string image)
         {
-            var graph = tf.get_default_graph();
+            try
+            {
+                var graph = tf.get_default_graph();
 
-            Tensor tensorNum = graph.OperationByName("num_detections");
-            Tensor tensorBoxes = graph.OperationByName("detection_boxes");
-            Tensor tensorScores = graph.OperationByName("detection_scores");
-            Tensor tensorClasses = graph.OperationByName("detection_classes");
-            Tensor imgTensor = graph.OperationByName("image_tensor");
-            Tensor[] outTensorArr = new Tensor[] { tensorNum, tensorBoxes, tensorScores, tensorClasses };
+                Tensor tensorNum = graph.OperationByName("num_detections");
+                Tensor tensorBoxes = graph.OperationByName("detection_boxes");
+                Tensor tensorScores = graph.OperationByName("detection_scores");
+                Tensor tensorClasses = graph.OperationByName("detection_classes");
+                Tensor imgTensor = graph.OperationByName("image_tensor");
+                Tensor[] outTensorArr = new Tensor[] { tensorNum, tensorBoxes, tensorScores, tensorClasses };
 
-            var results = sess.run(outTensorArr, new FeedItem(imgTensor, imgArr));
+                var results = sess.run(outTensorArr, new FeedItem(imgTensor, imgArr));
 
-            return ParseResults(results, image);
+                return ParseResults(results, image);
+            }
+            catch (FileNotFoundException)
+            {
+                return new Result()
+                {
+                    Error = new KeyValuePair<string, string>("FileNotFound", image)
+                };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         private NDArray ReadTensorFromImageFile(string file_name)
