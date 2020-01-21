@@ -28,24 +28,30 @@ using static Tensorflow.Binding;
 
 namespace MachineLearningToolkit
 {
-    /// <summary>
-    /// In this tutorial, we will reuse the feature extraction capabilities from powerful image classifiers trained on ImageNet 
-    /// and simply train a new classification layer on top. Transfer learning is a technique that shortcuts much of this 
-    /// by taking a piece of a model that has already been trained on a related task and reusing it in a new model.
-    /// 
-    /// https://www.tensorflow.org/hub/tutorials/image_retraining
-    /// </summary>
     public class ImageClassificationRetrainer
     {
-        const string data_dir = "retrain_images";
-        string summaries_dir = Path.Join(data_dir, "retrain_logs");
-        string image_dir = Path.Join(data_dir, "flower_photos");
-        string bottleneck_dir = Path.Join(data_dir, "bottleneck");
-        string output_graph = Path.Join(data_dir, "output_graph.pb");
-        string output_labels = Path.Join(data_dir, "output_labels.txt");
-        // The location where variable checkpoints will be stored.
-        string CHECKPOINT_NAME = Path.Join(data_dir, "_retrain_checkpoint");
-        string tfhub_module = "https://tfhub.dev/google/imagenet/inception_v3/feature_vector/3";
+
+        string Bottleneck_dir;
+        string Checkpoint;
+        string Output_graph;
+        string Output_labels;
+        string Summaries_dir;
+        string Tfhub_module;
+        string TrainImagesDir;
+        int TrainingSteps;
+
+        public ImageClassificationRetrainer(string trainDir, string trainImagesDir, int trainingSteps = 4000, string tfhubModule = "https://tfhub.dev/google/imagenet/inception_v3/feature_vector/3")
+        {
+            string Bottleneck_dir = Directory.CreateDirectory(Path.Join(trainDir, "bottleneck")).FullName;
+            string Checkpoint = Directory.CreateDirectory(Path.Join(trainDir, "_retrain_checkpoint")).FullName;
+            string Output_graph = Directory.CreateDirectory(Path.Join(trainDir, "retrained_graph.pb")).FullName;
+            string Output_labels = Directory.CreateDirectory(Path.Join(trainDir, "label_map.txt")).FullName;
+            string Summaries_dir = Directory.CreateDirectory(Path.Join(trainDir, "retrain_logs")).FullName;
+            string Tfhub_module = tfhubModule;
+            string TrainImagesDir = trainImagesDir;
+            int TrainingSteps = trainingSteps;
+        }
+
         string input_tensor_name = "Placeholder";
         string final_tensor_name = "final_result";
         float testing_percentage = 0.1f;
@@ -53,12 +59,11 @@ namespace MachineLearningToolkit
         float learning_rate = 0.01f;
         Tensor resized_image_tensor;
         Dictionary<string, Dictionary<string, string[]>> image_lists;
-        int how_many_training_steps = 100;
-        int eval_step_interval = 10;
+        int eval_step_interval = 100;
         int train_batch_size = 100;
         int test_batch_size = -1;
         int validation_batch_size = 100;
-        int intermediate_store_frequency = 0;
+        int intermediate_store_frequency = 500;
         int class_count = 0;
         const int MAX_NUM_IMAGES_PER_CLASS = 134217727;
         Operation train_step;
@@ -112,8 +117,8 @@ namespace MachineLearningToolkit
             Tensor resized_image_tensor, Tensor bottleneck_tensor)
         {
             var (test_bottlenecks, test_ground_truth, test_filenames) = get_random_cached_bottlenecks(train_session, image_lists,
-                                    test_batch_size, "testing", bottleneck_dir, image_dir, jpeg_data_tensor,
-                                    decoded_image_tensor, resized_image_tensor, bottleneck_tensor, tfhub_module);
+                                    test_batch_size, "testing", Bottleneck_dir, TrainImagesDir, jpeg_data_tensor,
+                                    decoded_image_tensor, resized_image_tensor, bottleneck_tensor, Tfhub_module);
 
             var (eval_session, _, bottleneck_input, ground_truth_input, evaluation_step,
                 prediction) = build_eval_session(class_count);
@@ -144,7 +149,7 @@ namespace MachineLearningToolkit
 
             // Now we need to restore the values from the training graph to the eval
             // graph.
-            tf.train.Saver().restore(eval_sess, CHECKPOINT_NAME);
+            tf.train.Saver().restore(eval_sess, Checkpoint);
 
             (evaluation_step, prediction) = add_evaluation_step(final_tensor,
                                                     ground_truth_input);
@@ -506,33 +511,23 @@ namespace MachineLearningToolkit
 
         public void PrepareData()
         {
-            // get a set of images to teach the network about the new classes
-            string fileName = "flower_photos.tgz";
-            string url = $"http://download.tensorflow.org/example_images/{fileName}";
-            Web.Download(url, data_dir, fileName);
-            Compress.ExtractTGZ(Path.Join(data_dir, fileName), data_dir);
+            //// download graph meta data
+            //url = "https://raw.githubusercontent.com/SciSharp/TensorFlow.NET/master/graph/InceptionV3.meta";
+            //Web.Download(url, "graph", "InceptionV3.meta");
 
-            // download graph meta data
-            url = "https://raw.githubusercontent.com/SciSharp/TensorFlow.NET/master/graph/InceptionV3.meta";
-            Web.Download(url, "graph", "InceptionV3.meta");
-
-            // download variables.data checkpoint file.
-            url = "https://github.com/SciSharp/TensorFlow.NET/raw/master/data/tfhub_modules.zip";
-            Web.Download(url, data_dir, "tfhub_modules.zip");
-            Compress.UnZip(Path.Join(data_dir, "tfhub_modules.zip"), "tfhub_modules");
-
-            // Prepare necessary directories that can be used during training
-            Directory.CreateDirectory(summaries_dir);
-            Directory.CreateDirectory(bottleneck_dir);
+            //// download variables.data checkpoint file.
+            //url = "https://github.com/SciSharp/TensorFlow.NET/raw/master/data/tfhub_modules.zip";
+            //Web.Download(url, data_dir, "tfhub_modules.zip");
+            //Compress.UnZip(Path.Join(data_dir, "tfhub_modules.zip"), "tfhub_modules");
 
             // Look at the folder structure, and create lists of all the images.
             image_lists = create_image_lists();
             class_count = len(image_lists);
             if (class_count == 0)
-                print($"No valid folders of images found at {image_dir}");
+                print($"No valid folders of images found at {TrainImagesDir}");
             if (class_count == 1)
                 print("Only one valid folder of images found at " +
-                     image_dir +
+                     TrainImagesDir +
                      " - multiple classes are needed for classification.");
         }
 
@@ -556,7 +551,7 @@ namespace MachineLearningToolkit
         /// </summary>
         private Dictionary<string, Dictionary<string, string[]>> create_image_lists()
         {
-            var sub_dirs = tf.gfile.Walk(image_dir)
+            var sub_dirs = tf.gfile.Walk(TrainImagesDir)
                 .Select(x => x.Item1)
                 .OrderBy(x => x)
                 .ToArray();
@@ -613,33 +608,33 @@ namespace MachineLearningToolkit
 
             // We'll make sure we've calculated the 'bottleneck' image summaries and
             // cached them on disk.
-            cache_bottlenecks(sess, image_lists, image_dir,
-                    bottleneck_dir, jpeg_data_tensor,
+            cache_bottlenecks(sess, image_lists, TrainImagesDir,
+                    Bottleneck_dir, jpeg_data_tensor,
                     decoded_image_tensor, resized_image_tensor,
-                    bottleneck_tensor, tfhub_module);
+                    bottleneck_tensor, Tfhub_module);
 
             // Create the operations we need to evaluate the accuracy of our new layer.
             var (evaluation_step, _) = add_evaluation_step(final_tensor, ground_truth_input);
 
             // Merge all the summaries and write them out to the summaries_dir
             var merged = tf.summary.merge_all();
-            var train_writer = tf.summary.FileWriter(summaries_dir + "/train", sess.graph);
-            var validation_writer = tf.summary.FileWriter(summaries_dir + "/validation", sess.graph);
+            var train_writer = tf.summary.FileWriter(Summaries_dir + "/train", sess.graph);
+            var validation_writer = tf.summary.FileWriter(Summaries_dir + "/validation", sess.graph);
 
             // Create a train saver that is used to restore values into an eval graph
             // when exporting models.
             var train_saver = tf.train.Saver();
-            train_saver.save(sess, CHECKPOINT_NAME);
+            train_saver.save(sess, Checkpoint);
 
             sw.Restart();
 
-            for (int i = 0; i < how_many_training_steps; i++)
+            for (int i = 0; i < TrainingSteps; i++)
             {
                 var (train_bottlenecks, train_ground_truth, _) = get_random_cached_bottlenecks(
                      sess, image_lists, train_batch_size, "training",
-                     bottleneck_dir, image_dir, jpeg_data_tensor,
+                     Bottleneck_dir, TrainImagesDir, jpeg_data_tensor,
                      decoded_image_tensor, resized_image_tensor, bottleneck_tensor,
-                     tfhub_module);
+                     Tfhub_module);
 
                 // Feed the bottlenecks and ground truth into the graph, and run a training
                 // step. Capture training summaries for TensorBoard with the `merged` op.
@@ -653,7 +648,7 @@ namespace MachineLearningToolkit
                 // train_writer.add_summary(train_summary, i);
 
                 // Every so often, print out how well the graph is training.
-                bool is_last_step = (i + 1 == how_many_training_steps);
+                bool is_last_step = (i + 1 == TrainingSteps);
                 if ((i % eval_step_interval) == 0 || is_last_step)
                 {
                     (float train_accuracy, float cross_entropy_value) = sess.run((evaluation_step, cross_entropy),
@@ -663,9 +658,9 @@ namespace MachineLearningToolkit
 
                     var (validation_bottlenecks, validation_ground_truth, _) = get_random_cached_bottlenecks(
                         sess, image_lists, validation_batch_size, "validation",
-                        bottleneck_dir, image_dir, jpeg_data_tensor,
+                        Bottleneck_dir, TrainImagesDir, jpeg_data_tensor,
                         decoded_image_tensor, resized_image_tensor, bottleneck_tensor,
-                        tfhub_module);
+                        Tfhub_module);
 
                     // Run a validation step and capture training summaries for TensorBoard
                     // with the `merged` op.
@@ -687,7 +682,7 @@ namespace MachineLearningToolkit
             }
 
             // After training is complete, force one last save of the train checkpoint.
-            train_saver.save(sess, CHECKPOINT_NAME);
+            train_saver.save(sess, Checkpoint);
 
             // We've completed all our training, so run a final test evaluation on
             // some new images we haven't used before.
@@ -697,9 +692,9 @@ namespace MachineLearningToolkit
 
             // Write out the trained graph and labels with the weights stored as
             // constants.
-            Console.WriteLine($"Arquivos finais do treinamento salvos em: {output_graph}");
-            save_graph_to_file(output_graph, class_count);
-            File.WriteAllText(output_labels, string.Join("\n", image_lists.Keys));
+            Console.WriteLine($"Arquivos finais do treinamento salvos em: {Output_graph}");
+            save_graph_to_file(Output_graph, class_count);
+            File.WriteAllText(Output_labels, string.Join("\n", image_lists.Keys));
         }
 
         /// <summary>
@@ -714,18 +709,18 @@ namespace MachineLearningToolkit
         /// <param name="sess_"></param>
         public void Predict(Session sess_)
         {
-            if (!File.Exists(output_graph))
+            if (!File.Exists(Output_graph))
                 return;
 
-            var labels = File.ReadAllLines(output_labels);
+            var labels = File.ReadAllLines(Output_labels);
 
             // predict image
-            var img_path = Path.Join(image_dir, "daisy", "5547758_eea9edfd54_n.jpg");
+            var img_path = Path.Join(TrainImagesDir, "daisy", "5547758_eea9edfd54_n.jpg");
             var fileBytes = ReadTensorFromImageFile(img_path);
 
             // import graph and variables
             var graph = new Graph();
-            graph.Import(output_graph, "");
+            graph.Import(Output_graph, "");
 
             Tensor input = graph.OperationByName(input_tensor_name);
             Tensor output = graph.OperationByName(final_tensor_name);
@@ -762,11 +757,11 @@ namespace MachineLearningToolkit
 
         public void Test(Session sess_)
         {
-            if (!File.Exists(output_graph))
+            if (!File.Exists(Output_graph))
                 return;
 
             var graph = new Graph();
-            graph.Import(output_graph);
+            graph.Import(Output_graph);
             var (jpeg_data_tensor, decoded_image_tensor) = add_jpeg_decoding();
 
             tf_with(tf.Session(graph), sess =>
