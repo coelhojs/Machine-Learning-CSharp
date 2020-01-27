@@ -48,6 +48,15 @@ namespace MachineLearningToolkit
                         case "--labelFile":
                             labelFile = args[i + 1];
                             break;
+                        case "--trainDir":
+                            trainDir = args[i + 1];
+                            break;
+                        case "--trainImagesDir":
+                            trainImagesDir = args[i + 1];
+                            break;
+                        case "--trainingSteps":
+                            trainingSteps = int.Parse(args[i + 1]);
+                            break;
                     }
                 }
 

@@ -25,12 +25,10 @@ using System.Threading.Tasks;
 using Tensorflow;
 using MachineLearningToolkit.Utility;
 using static Tensorflow.Binding;
-
 namespace MachineLearningToolkit
 {
     public class ImageClassificationRetrainer
     {
-
         string Bottleneck_dir;
         string Checkpoint;
         string Output_graph;
@@ -40,16 +38,18 @@ namespace MachineLearningToolkit
         string TrainImagesDir;
         int TrainingSteps;
 
-        public ImageClassificationRetrainer(string trainDir, string trainImagesDir, int trainingSteps = 4000, string tfhubModule = "https://tfhub.dev/google/imagenet/inception_v3/feature_vector/3")
+        public ImageClassificationRetrainer(string trainDir, string trainImagesDir, int trainingSteps = 4000)
         {
             string Bottleneck_dir = Directory.CreateDirectory(Path.Join(trainDir, "bottleneck")).FullName;
             string Checkpoint = Directory.CreateDirectory(Path.Join(trainDir, "_retrain_checkpoint")).FullName;
             string Output_graph = Directory.CreateDirectory(Path.Join(trainDir, "retrained_graph.pb")).FullName;
-            string Output_labels = Directory.CreateDirectory(Path.Join(trainDir, "label_map.txt")).FullName;
+            string Output_labels = Path.Join(trainDir, "label_map.txt");
             string Summaries_dir = Directory.CreateDirectory(Path.Join(trainDir, "retrain_logs")).FullName;
-            string Tfhub_module = tfhubModule;
+            string Tfhub_module = "InceptionV3";
             string TrainImagesDir = trainImagesDir;
             int TrainingSteps = trainingSteps;
+
+            File.CreateText(Output_labels);
         }
 
         string input_tensor_name = "Placeholder";
@@ -79,16 +79,6 @@ namespace MachineLearningToolkit
         public bool Run()
         {
             PrepareData();
-
-            #region For debug purpose
-
-            // predict images
-            // Predict(null);
-
-            // load saved pb and test new images.
-            // Test(null); 
-
-            #endregion
 
             var graph = ImportGraph();
 
@@ -277,7 +267,7 @@ namespace MachineLearningToolkit
         {
             var (height, width) = (299, 299);
             var graph = tf.Graph().as_default();
-            tf.train.import_meta_graph("graph/InceptionV3.meta");
+            tf.train.import_meta_graph("InceptionV3\\InceptionV3.meta");
             var vars = tf.get_collection<ResourceVariable>(tf.GraphKeys.GLOBAL_VARIABLES);
             Tensor resized_input_tensor = graph.OperationByName(input_tensor_name); //tf.placeholder(tf.float32, new TensorShape(-1, height, width, 3));
                                                                                     // var m = hub.Module(module_spec);
@@ -511,24 +501,15 @@ namespace MachineLearningToolkit
 
         public void PrepareData()
         {
-            //// download graph meta data
-            //url = "https://raw.githubusercontent.com/SciSharp/TensorFlow.NET/master/graph/InceptionV3.meta";
-            //Web.Download(url, "graph", "InceptionV3.meta");
-
-            //// download variables.data checkpoint file.
-            //url = "https://github.com/SciSharp/TensorFlow.NET/raw/master/data/tfhub_modules.zip";
-            //Web.Download(url, data_dir, "tfhub_modules.zip");
-            //Compress.UnZip(Path.Join(data_dir, "tfhub_modules.zip"), "tfhub_modules");
-
             // Look at the folder structure, and create lists of all the images.
             image_lists = create_image_lists();
             class_count = len(image_lists);
             if (class_count == 0)
-                print($"No valid folders of images found at {TrainImagesDir}");
+                print($"Não foram encontrados diretórios válidos na pasta de treinamento {TrainImagesDir}");
             if (class_count == 1)
-                print("Only one valid folder of images found at " +
+                print("Foi localizado apenas um diretório válido em " +
                      TrainImagesDir +
-                     " - multiple classes are needed for classification.");
+                     " - são necessárias múltiplas classes para o treinamento.");
         }
 
         private (Tensor, Tensor) add_jpeg_decoding()
@@ -561,10 +542,10 @@ namespace MachineLearningToolkit
             foreach (var sub_dir in sub_dirs)
             {
                 var dir_name = sub_dir.Split(Path.DirectorySeparatorChar).Last();
-                print($"Looking for images in '{dir_name}'");
+                print($"Procurando imagens em '{dir_name}'");
                 var file_list = Directory.GetFiles(sub_dir);
                 if (len(file_list) < 20)
-                    print($"WARNING: Folder has less than 20 images, which may cause issues.");
+                    print($"AVISO: A pasta possui menos de 20 imagens, o que poderá gerar resultados ruins.");
 
                 var label_name = dir_name.ToLower();
                 result[label_name] = new Dictionary<string, string[]>();
