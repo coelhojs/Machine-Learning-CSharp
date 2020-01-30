@@ -23,7 +23,7 @@ namespace MachineLearningToolkit
             {
                 if (args.Length == 0)
                 {
-                    Log.Error("Informe os seguintes argumentos:\n" +
+                    Console.WriteLine("Informe os seguintes argumentos:\n" +
                         "--modelDir [Path absoluto ate a pasta que contem o grafo e o label map]\n" +
                         "--outputDir [Path de uma pasta em que serao armazenados os resultados temporariamente]\n" +
                         "--listFile [Path para o arquivo serializado com a lista de imagens e quadrantes.");
@@ -80,54 +80,79 @@ namespace MachineLearningToolkit
                 // Apply config           
                 NLog.LogManager.Configuration = config;
 
-
                 if (string.IsNullOrEmpty(modelDir) || string.IsNullOrEmpty(outputDir) || string.IsNullOrEmpty(listFile))
                     Log.Error("Informe os parametros --modelDir, --listFile --outputDir");
 
                 if (args[0] == "ObjectDetection")
                 {
-                    ObjectDetection test;
-
-                    if (string.IsNullOrEmpty(graphFile) && string.IsNullOrEmpty(labelFile))
+                    try
                     {
-                        test = new ObjectDetection(modelDir);
+                        ObjectDetection test;
+
+                        Log.Info("Iniciando a detecção de objetos.");
+
+                        if (string.IsNullOrEmpty(graphFile) && string.IsNullOrEmpty(labelFile))
+                        {
+                            test = new ObjectDetection(modelDir);
+                        }
+                        else
+                        {
+                            test = new ObjectDetection(modelDir, graphFile, labelFile);
+                        }
+
+                        var results = test.Inference(listFile);
+
+                        string outputFile = Path.Combine(outputDir, "Result.ObjectDetection");
+
+                        JsonUtil<List<Result>>.WriteJsonOnFile(results, outputFile);
+
+                        Console.WriteLine(outputFile);
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        test = new ObjectDetection(modelDir, graphFile, labelFile);
+                        Log.Error($"Houve um erro na detecção de objetos: {ex.Message}");
                     }
-
-                    var results = test.Inference(listFile);
-
-                    string outputFile = Path.Combine(outputDir, "Result.ObjectDetection");
-
-                    JsonUtil<List<Result>>.WriteJsonOnFile(results, outputFile);
-
-                    Log.Error(outputFile);
                 }
                 else if (args[0] == "ImageClassification")
                 {
-                    ImageClassification test;
-
-                    if (string.IsNullOrEmpty(graphFile) && string.IsNullOrEmpty(labelFile))
+                    try
                     {
-                        test = new ImageClassification(modelDir);
+                        ImageClassification test;
+
+                        Log.Info("Iniciando classificação de imagens");
+
+                        if (string.IsNullOrEmpty(graphFile) && string.IsNullOrEmpty(labelFile))
+                        {
+                            test = new ImageClassification(modelDir);
+                        }
+                        else
+                        {
+                            test = new ImageClassification(modelDir, graphFile, labelFile);
+                        }
+
+                        var results = test.Classify(listFile);
+
+                        string outputFile = Path.Combine(outputDir, "Result.ImageClassification");
+
+                        JsonUtil<List<ClassificationInference>>.WriteJsonOnFile(results, outputFile);
+
+                        Console.WriteLine(outputFile);
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        test = new ImageClassification(modelDir, graphFile, labelFile);
+                        Log.Error($"Houve um erro na classificação de imagens: {ex.Message}");
                     }
-
-                    var results = test.Classify(listFile);
-
-                    string outputFile = Path.Combine(outputDir, "Result.ImageClassification");
-
-                    JsonUtil<List<ClassificationInference>>.WriteJsonOnFile(results, outputFile);
-
-                    Log.Error(outputFile);
                 }
                 else if (args[0] == "ImageClassificationRetrainer")
                 {
+                    try
+                    {
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error($"Houve um erro no retreinamento do modelo de classificação de imagens: {ex.Message}");
+                    }
 
                 }
             }
@@ -136,9 +161,9 @@ namespace MachineLearningToolkit
             {
                 Log.Error("Verifique o comando executado");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Log.Error($"Erro interno: {ex.Message}");
             }
         }
     }

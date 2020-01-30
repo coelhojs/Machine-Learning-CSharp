@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog.Fluent;
 using NumSharp;
 using Tensorflow;
 using static Tensorflow.Binding;
@@ -35,30 +36,55 @@ namespace MachineLearningToolkit
 
                 return graph;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw new Exception("Nao foi possivel localizar o arquivo do modelo.\nInforme o path para o arquivo .pb " +
-                    "com o argumento --graphFile");
+                Log.Error($"Nao foi possivel carregar o arquivo do modelo.\nVerifique o path para o arquivo .pb " +
+                    "com o argumento --graphFile: {ex.Message}");
+                throw ex;
             }
         }
         private string[] LoadLabels(string modelDir, string labelFile)
         {
-            return File.ReadAllLines(Path.Join(modelDir, labelFile));
+            try
+            {
+                return File.ReadAllLines(Path.Join(modelDir, labelFile));
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Nao foi possivel carregar o arquivo de labels." +
+                                   "\nVerifique o formato do arquivo e " +
+                                   "informe o path para o arquivo .pbtxt " +
+                                   "com o argumento --labelFile: {ex.Message}");
+                throw ex;
+            }
         }
         public List<ClassificationInference> Classify(string listPath)
         {
-            List<ClassificationInference> Results = new List<ClassificationInference>();
-
-            var list = JsonUtil<List<string>>.ReadJsonFile(listPath);
-
-            foreach (var image in list)
+            try
             {
-                NDArray imgArr = ReadTensorFromImageFile(Path.GetFullPath(image));
+                List<ClassificationInference> Results = new List<ClassificationInference>();
 
-                using (var sess = tf.Session(Graph))
-                    Results.Add(Predict(sess, imgArr, image));
+                var list = JsonUtil<List<string>>.ReadJsonFile(listPath);
+
+                foreach (var image in list)
+                {
+                    NDArray imgArr = ReadTensorFromImageFile(Path.GetFullPath(image));
+
+                    using (var sess = tf.Session(Graph))
+                        Results.Add(Predict(sess, imgArr, image));
+                }
+                return Results;
             }
-            return Results;
+            catch (FileNotFoundException ex)
+            {
+                Log.Error($"Arquivo não encontrado: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex.Message);
+                throw;
+            }
         }
         private ClassificationInference Predict(Session sess, NDArray imgArr, string image)
         {
