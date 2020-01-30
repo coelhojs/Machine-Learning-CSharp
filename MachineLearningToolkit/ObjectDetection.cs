@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using MachineLearningToolkit.Utility;
+using NLog;
 using NumSharp;
 using Tensorflow;
 using static Tensorflow.Binding;
@@ -12,6 +13,8 @@ namespace MachineLearningToolkit
 {
     public class ObjectDetection
     {
+        private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
+
         private const float MIN_SCORE = 0.7f;
         private Graph Graph;
         private PbtxtItems Labels;
@@ -40,8 +43,9 @@ namespace MachineLearningToolkit
                 }
                 return Results;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Error($"Não foi possível executar a deteção para o grupo de imagens atual: {ex.Message}");
                 throw;
             }
         }
@@ -55,10 +59,11 @@ namespace MachineLearningToolkit
 
                 return graph;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw new Exception("Nao foi possivel localizar o arquivo do modelo.\nInforme o path para o arquivo .pb " +
-                    "com o argumento --graphFile");
+                Log.Error($"Nao foi possivel localizar o arquivo do modelo.\nInforme o path para o arquivo .pb " +
+                    "com o argumento --graphFile. Erro: {ex.Message}");
+                throw ex;
             }
         }
 
@@ -79,15 +84,18 @@ namespace MachineLearningToolkit
 
                 return ParseResults(results, image);
             }
-            catch (FileNotFoundException)
+            catch (FileNotFoundException ex)
             {
+                Log.Error($"Erro: Arquivo {ex.Message} n�o encontrado.");
+
                 return new Result()
                 {
                     Error = new KeyValuePair<string, string>("FileNotFound", image)
                 };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Error(ex.Message);
                 throw;
             }
         }
@@ -145,12 +153,13 @@ namespace MachineLearningToolkit
                 // get pbtxt items
                 return PbtxtParser.ParsePbtxtFile(Path.Combine(modelDir, labelFile));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw new Exception("Nao foi possivel carregar o arquivo de labels." +
-                    "\nVerifique o formato do arquivo e " +
-                    "informe o path para o arquivo .pbtxt " +
-                    "com o argumento --labelFile");
+                Log.Error($"Nao foi possivel carregar o arquivo de labels." +
+                                   "\nVerifique o formato do arquivo e " +
+                                   "informe o path para o arquivo .pbtxt " +
+                                   "com o argumento --labelFile: {ex.Message}");
+                throw ex;
             }
         }
 

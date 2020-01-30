@@ -9,8 +9,8 @@ namespace Tests
     [TestClass]
     public class ObjectDetectionTests
     {
-        static string ModelDir = @"C:\Machine-Learning-Models-Server\models_inference\vera_poles_trees";
-        static string OutputDir = "C:\\Machine-Learning-Models-Server\\test_images";
+        static string ModelDir = @"C:\POD-VERA\MachineLearningModels\vera_poles_trees";
+        static string OutputDir = "C:\\development\\";
         static string OutputFile = Path.Combine(OutputDir, DateTime.Now.Ticks.ToString());
 
         [TestMethod]
@@ -20,10 +20,8 @@ namespace Tests
 
             for (int i = 0; i < 3; i++)
             {
-                testList.Add("C:\\Machine-Learning-Models-Server\\test_images\\1.png");
+                testList.Add("C:\\development\\1.png");
             }
-            //testList.Add("C:/Machine-Learning-Models-Server/test_images/2.png");
-            //testList.Add("C:\\Machine-Learning-Models-Server\\test_images\\3.png");
 
             JsonUtil<List<string>>.WriteJsonOnFile(testList, OutputFile);
 
@@ -68,17 +66,20 @@ namespace Tests
         {
             string requestPath = RequestJsonFileGenerator();
 
-            List<string> imagesList = RequestJsonFileReader(requestPath);
+            //List<string> imagesList = RequestJsonFileReader(requestPath);
 
-            ObjectDetection test = new ObjectDetection(ModelDir);
+            Program.Main(new string[] { "ObjectDetection", "--modelDir", @"C:\POD-VERA\MachineLearningModels\vera_poles_trees",
+                "--listFile", requestPath, "--outputDir", "C:\\Temp", "--logPath", "C:\\Logs\\MachineLearningToolkit.log" });
 
-            var results = test.Inference(requestPath);
+            //ObjectDetection test = new ObjectDetection(ModelDir);
 
-            string inferenceResultsFile = InferenceJsonFileGenerator(results);
+            //var results = test.Inference(requestPath);
 
-            var parsedResults = InferenceJsonFileReader(inferenceResultsFile);
+            //string inferenceResultsFile = InferenceJsonFileGenerator(results);
 
-            Assert.IsNotNull(parsedResults);
+            //var parsedResults = InferenceJsonFileReader(inferenceResultsFile);
+
+            //Assert.IsNotNull(parsedResults);
         }
 
 

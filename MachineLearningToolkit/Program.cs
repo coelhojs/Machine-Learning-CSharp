@@ -1,4 +1,6 @@
-﻿using System;
+﻿using NLog;
+using NLog.Fluent;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -9,19 +11,19 @@ namespace MachineLearningToolkit
         private static string graphFile = null;
         private static string labelFile = null;
         private static string listFile = "";
+        private static string logPath = "";
         private static string modelDir = "";
         private static string outputDir = "";
         private static string trainDir = "";
         private static string trainImagesDir = "";
         private static int trainingSteps;
-
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             try
             {
                 if (args.Length == 0)
                 {
-                    Console.WriteLine("Informe os seguintes argumentos:\n" +
+                    Log.Error("Informe os seguintes argumentos:\n" +
                         "--modelDir [Path absoluto ate a pasta que contem o grafo e o label map]\n" +
                         "--outputDir [Path de uma pasta em que serao armazenados os resultados temporariamente]\n" +
                         "--listFile [Path para o arquivo serializado com a lista de imagens e quadrantes.");
@@ -57,11 +59,30 @@ namespace MachineLearningToolkit
                         case "--trainingSteps":
                             trainingSteps = int.Parse(args[i + 1]);
                             break;
+                        case "--logPath":
+                            logPath = args[i + 1];
+                            break;
                     }
                 }
 
+                var config = new NLog.Config.LoggingConfiguration();
+
+                // Targets where to log to: File and Console
+                if (string.IsNullOrEmpty(logPath))
+                {
+                    logPath = "C:\\temp\\MachineLearningToolkit.log";
+                }
+                var logfile = new NLog.Targets.FileTarget("logfile") { FileName = logPath };
+
+                // Rules for mapping loggers to targets            
+                config.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
+
+                // Apply config           
+                NLog.LogManager.Configuration = config;
+
+
                 if (string.IsNullOrEmpty(modelDir) || string.IsNullOrEmpty(outputDir) || string.IsNullOrEmpty(listFile))
-                    Console.WriteLine("Informe os parametros --modelDir, --listFile --outputDir");
+                    Log.Error("Informe os parametros --modelDir, --listFile --outputDir");
 
                 if (args[0] == "ObjectDetection")
                 {
@@ -82,7 +103,7 @@ namespace MachineLearningToolkit
 
                     JsonUtil<List<Result>>.WriteJsonOnFile(results, outputFile);
 
-                    Console.WriteLine(outputFile);
+                    Log.Error(outputFile);
                 }
                 else if (args[0] == "ImageClassification")
                 {
@@ -103,7 +124,7 @@ namespace MachineLearningToolkit
 
                     JsonUtil<List<ClassificationInference>>.WriteJsonOnFile(results, outputFile);
 
-                    Console.WriteLine(outputFile);
+                    Log.Error(outputFile);
                 }
                 else if (args[0] == "ImageClassificationRetrainer")
                 {
@@ -113,7 +134,7 @@ namespace MachineLearningToolkit
 
             catch (IndexOutOfRangeException)
             {
-                Console.WriteLine("Verifique o comando executado");
+                Log.Error("Verifique o comando executado");
             }
             catch (Exception)
             {
