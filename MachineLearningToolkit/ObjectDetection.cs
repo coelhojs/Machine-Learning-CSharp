@@ -25,7 +25,6 @@ namespace MachineLearningToolkit
             Graph = ImportGraph(graphFile);
             Labels = LoadLabels(modelDir, labelFile);
         }
-
         public List<Result> Inference(string listPath)
         {
             try
@@ -45,11 +44,10 @@ namespace MachineLearningToolkit
             }
             catch (Exception ex)
             {
-                Log.Error($"Não foi possível executar a deteção para o grupo de imagens atual: {ex.Message}");
-                throw;
+                Log.Error($"Não foi possível executar a detecção para o grupo de imagens atual: {ex.Message}");
+                throw ex;
             }
         }
-
         private Graph ImportGraph(string graphFile)
         {
             try
@@ -61,12 +59,11 @@ namespace MachineLearningToolkit
             }
             catch (Exception ex)
             {
-                Log.Error($"Nao foi possivel localizar o arquivo do modelo.\nInforme o path para o arquivo .pb " +
-                    "com o argumento --graphFile. Erro: {ex.Message}");
+                Log.Error("Não foi possivel carregar o arquivo do modelo.\nVerifique o path para o arquivo .pb " +
+                    $"com o argumento --graphFile: {ex.Message}");
                 throw ex;
             }
         }
-
         private Result Predict(Session sess, NDArray imgArr, string image)
         {
             try
@@ -86,7 +83,7 @@ namespace MachineLearningToolkit
             }
             catch (FileNotFoundException ex)
             {
-                Log.Error($"Erro: Arquivo {ex.Message} n�o encontrado.");
+                Log.Error($"Arquivo {ex.Message} não encontrado.");
 
                 return new Result()
                 {
@@ -117,7 +114,6 @@ namespace MachineLearningToolkit
         {
             var detectionsList = new List<DetectionInference>();
 
-            // get bitmap
             Bitmap bitmap = new Bitmap(Path.GetFullPath(imagePath));
 
             var detectionClasses = np.squeeze(resultArr[3]).GetData<float>();
@@ -155,10 +151,10 @@ namespace MachineLearningToolkit
             }
             catch (Exception ex)
             {
-                Log.Error($"Nao foi possivel carregar o arquivo de labels." +
+                Log.Error("Nao foi possivel carregar o arquivo de labels." +
                                    "\nVerifique o formato do arquivo e " +
                                    "informe o path para o arquivo .pbtxt " +
-                                   "com o argumento --labelFile: {ex.Message}");
+                                   $"com o argumento --labelFile: {ex.Message}");
                 throw ex;
             }
         }
