@@ -59,18 +59,19 @@ namespace MachineLearningToolkit
 
         public static bool IsValidJson(string json)
         {
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                return false;
-            }
-
-            if (json.StartsWith("{") || json.StartsWith("[") && json.EndsWith("}") || json.EndsWith("]"))
-            {
-                return true;
-            }
-
             try
             {
+
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return false;
+                }
+
+                if (json.StartsWith("{") || json.StartsWith("[") && json.EndsWith("}") || json.EndsWith("]"))
+                {
+                    return true;
+                }
+
                 var obj = JsonConvert.DeserializeObject(json);
                 return obj.GetType() == typeof(TEntity);
 
@@ -78,6 +79,10 @@ namespace MachineLearningToolkit
             catch (JsonReaderException)
             {
                 return false;
+            }
+            catch (Exception)
+            {
+                throw;
             }
         }
     }

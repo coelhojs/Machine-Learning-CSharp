@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using MachineLearningToolkit.Utility;
 using NLog.Fluent;
 using NumSharp;
 using Tensorflow;
@@ -11,6 +12,8 @@ namespace MachineLearningToolkit
 {
     public class ImageClassification
     {
+        private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
+
         private Graph Graph;
         private string Input_name;
         private string[] Labels;
@@ -32,7 +35,7 @@ namespace MachineLearningToolkit
             try
             {
                 var graph = new Graph();
-                graph.Import(Path.Combine(ModelDir, graphFile));
+                graph.Import(Security.GrantAccess(Path.Combine(ModelDir, graphFile)));
 
                 return graph;
             }
@@ -47,7 +50,7 @@ namespace MachineLearningToolkit
         {
             try
             {
-                return File.ReadAllLines(Path.Join(modelDir, labelFile));
+                return File.ReadAllLines(Security.GrantAccess(Path.Join(modelDir, labelFile)));
             }
             catch (Exception ex)
             {
@@ -68,7 +71,7 @@ namespace MachineLearningToolkit
 
                 foreach (var image in list)
                 {
-                    NDArray imgArr = ReadTensorFromImageFile(Path.GetFullPath(image));
+                    NDArray imgArr = ReadTensorFromImageFile(Security.GrantAccess(Path.GetFullPath(image)));
 
                     using (var sess = tf.Session(Graph))
                         Results.Add(Predict(sess, imgArr, image));

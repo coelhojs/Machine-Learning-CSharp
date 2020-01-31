@@ -1,13 +1,17 @@
-﻿using NLog;
+﻿using MachineLearningToolkit.Utility;
+using NLog;
 using NLog.Fluent;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Permissions;
 
 namespace MachineLearningToolkit
 {
     public class Program
     {
+        private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
+
         private static string graphFile = null;
         private static string labelFile = null;
         private static string listFile = "";
@@ -75,7 +79,7 @@ namespace MachineLearningToolkit
                 var logfile = new NLog.Targets.FileTarget("logfile") { FileName = logPath };
 
                 // Rules for mapping loggers to targets            
-                config.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
+                config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
 
                 // Apply config           
                 NLog.LogManager.Configuration = config;
@@ -106,6 +110,8 @@ namespace MachineLearningToolkit
 
                         JsonUtil<List<Result>>.WriteJsonOnFile(results, outputFile);
 
+                        Log.Info("Detecção de objetos concluída.");
+
                         Console.WriteLine(outputFile);
                     }
                     catch (Exception ex)
@@ -135,6 +141,8 @@ namespace MachineLearningToolkit
                         string outputFile = Path.Combine(outputDir, "Result.ImageClassification");
 
                         JsonUtil<List<ClassificationInference>>.WriteJsonOnFile(results, outputFile);
+
+                        Log.Info("Classificação de imagens concluída.");
 
                         Console.WriteLine(outputFile);
                     }

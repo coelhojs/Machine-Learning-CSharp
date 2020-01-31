@@ -35,7 +35,7 @@ namespace MachineLearningToolkit
 
                 foreach (var image in list)
                 {
-                    NDArray imgArr = ReadTensorFromImageFile(Path.GetFullPath(image));
+                    NDArray imgArr = ReadTensorFromImageFile(Security.GrantAccess(Path.GetFullPath(image)));
 
                     using (var sess = tf.Session(Graph))
                         Results.Add(Predict(sess, imgArr, image));
@@ -53,7 +53,7 @@ namespace MachineLearningToolkit
             try
             {
                 var graph = new Graph().as_default();
-                graph.Import(Path.Combine(ModelDir, graphFile));
+                graph.Import(Security.GrantAccess(Path.Combine(ModelDir, graphFile)));
 
                 return graph;
             }
@@ -114,7 +114,7 @@ namespace MachineLearningToolkit
         {
             var detectionsList = new List<DetectionInference>();
 
-            Bitmap bitmap = new Bitmap(Path.GetFullPath(imagePath));
+            Bitmap bitmap = new Bitmap(Security.GrantAccess(Path.GetFullPath(imagePath)));
 
             var detectionClasses = np.squeeze(resultArr[3]).GetData<float>();
             var detectionScores = resultArr[2].AsIterator<float>();
@@ -147,7 +147,7 @@ namespace MachineLearningToolkit
             try
             {
                 // get pbtxt items
-                return PbtxtParser.ParsePbtxtFile(Path.Combine(modelDir, labelFile));
+                return PbtxtParser.ParsePbtxtFile(Security.GrantAccess(Path.Combine(modelDir, labelFile)));
             }
             catch (Exception ex)
             {
