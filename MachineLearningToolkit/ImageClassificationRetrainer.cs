@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using Tensorflow;
@@ -29,25 +30,40 @@ namespace MachineLearningToolkit
 {
     public class ImageClassificationRetrainer
     {
+        private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
+
         string Bottleneck_dir;
         string Checkpoint;
         string Output_graph;
         string Output_labels;
         string Summaries_dir;
         string Tfhub_module;
+        string TrainDir;
         string TrainImagesDir;
         int TrainingSteps;
 
-        public ImageClassificationRetrainer(string trainDir, string trainImagesDir, int trainingSteps = 4000)
+        public ImageClassificationRetrainer(string trainDir, string trainImagesDir = "", int trainingSteps = 4000)
         {
-            string Bottleneck_dir = Directory.CreateDirectory(Path.Join(trainDir, "bottleneck")).FullName;
-            string Checkpoint = Directory.CreateDirectory(Path.Join(trainDir, "_retrain_checkpoint")).FullName;
-            string Output_graph = Directory.CreateDirectory(Path.Join(trainDir, "retrained_graph.pb")).FullName;
-            string Output_labels = Path.Join(trainDir, "label_map.txt");
-            string Summaries_dir = Directory.CreateDirectory(Path.Join(trainDir, "retrain_logs")).FullName;
-            string Tfhub_module = "InceptionV3";
-            string TrainImagesDir = trainImagesDir;
-            int TrainingSteps = trainingSteps;
+
+            string meta_folder = Directory.CreateDirectory(Path.Combine(trainDir, "meta_files")).FullName;
+
+            Bottleneck_dir = Directory.CreateDirectory(Path.Join(meta_folder, "bottleneck")).FullName;
+            Checkpoint = Directory.CreateDirectory(Path.Join(meta_folder, "_retrain_checkpoint")).FullName;
+            Output_graph = Path.Join(trainDir, "retrained_graph.pb");
+            Output_labels = Path.Join(trainDir, "label_map.txt");
+            Summaries_dir = Directory.CreateDirectory(Path.Join(meta_folder, "retrain_logs")).FullName;
+            Tfhub_module = "InceptionV3";
+            TrainDir = trainDir;
+            TrainingSteps = trainingSteps;
+
+            if (string.IsNullOrEmpty(trainImagesDir))
+            {
+                TrainImagesDir = Path.Combine(trainDir, "images");
+            }
+            else
+            {
+                TrainImagesDir = trainImagesDir;
+            }
 
             File.CreateText(Output_labels);
         }
@@ -76,7 +92,7 @@ namespace MachineLearningToolkit
         float test_accuracy;
         NDArray predictions;
 
-        public bool Run()
+        public bool Retrain()
         {
             PrepareData();
 
@@ -265,15 +281,41 @@ namespace MachineLearningToolkit
 
         private (Graph, Tensor, Tensor, bool) create_module_graph()
         {
-            var (height, width) = (299, 299);
-            var graph = tf.Graph().as_default();
-            tf.train.import_meta_graph("InceptionV3\\InceptionV3.meta");
-            var vars = tf.get_collection<ResourceVariable>(tf.GraphKeys.GLOBAL_VARIABLES);
-            Tensor resized_input_tensor = graph.OperationByName(input_tensor_name); //tf.placeholder(tf.float32, new TensorShape(-1, height, width, 3));
-                                                                                    // var m = hub.Module(module_spec);
-            Tensor bottleneck_tensor = graph.OperationByName("module_apply_default/hub_output/feature_vector/SpatialSqueeze");// m(resized_input_tensor);
-            var wants_quantization = false;
-            return (graph, bottleneck_tensor, resized_input_tensor, wants_quantization);
+            try
+            {
+                var (height, width) = (299, 299);
+                var graph = tf.Graph().as_default();
+
+                var pre_trained_model = "InceptionV3.zip";
+
+                //if (File.Exists(pre_trained_model))
+                //File.Delete(pre_trained_model);
+
+                //File.Copy("InceptionV3.zip", pre_trained_model);
+
+                //if (Directory.Exists(Path.Combine(TrainDir, "tfhub_modules")))
+                //    Directory.Delete(Path.Combine(TrainDir, "tfhub_modules"));
+
+                ZipFile.ExtractToDirectory(pre_trained_model, "./");
+
+                tf.train.import_meta_graph("tfhub_modules\\InceptionV3.meta");
+                var vars = tf.get_collection<ResourceVariable>(tf.GraphKeys.GLOBAL_VARIABLES);
+                Tensor resized_input_tensor = graph.OperationByName(input_tensor_name); //tf.placeholder(tf.float32, new TensorShape(-1, height, width, 3));
+                                                                                        // var m = hub.Module(module_spec);
+                Tensor bottleneck_tensor = graph.OperationByName("module_apply_default/hub_output/feature_vector/SpatialSqueeze");// m(resized_input_tensor);
+                var wants_quantization = false;
+                return (graph, bottleneck_tensor, resized_input_tensor, wants_quantization);
+            }
+            catch (FileNotFoundException ex)
+            {
+                string message = $"Não foi possível localizar o modelo pré-treinado: {ex.Message}";
+                Log.Error(message);
+                throw new FileNotFoundException(message);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         private (NDArray, long[], string[]) get_random_cached_bottlenecks(Session sess, Dictionary<string, Dictionary<string, string[]>> image_lists,

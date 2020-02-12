@@ -17,7 +17,15 @@
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/coelhojs/Machine-Learning-CSharp</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
+    <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
+    <Configurations>Debug;Release;Release2</Configurations>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="InceptionV3\**" />
+    <EmbeddedResource Remove="InceptionV3\**" />
+    <None Remove="InceptionV3\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
@@ -43,10 +51,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="InceptionV3\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -59,6 +63,12 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="InceptionV3.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

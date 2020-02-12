@@ -9,8 +9,8 @@ namespace Tests
     [TestClass]
     public class ObjectDetectionTests
     {
-        static string ModelDir = @"C:\POD-VERA\MachineLearningModels\vera_poles_trees";
-        static string OutputDir = "C:\\temp\\";
+        static string ModelDir = @"C:\POD-VERA\MachineLearningModels\vera_equipments_45595";
+        static string OutputDir = "C:\\development\\";
         static string OutputFile = Path.Combine(OutputDir, "Request.ObjectDetection");
 
         [TestMethod]
@@ -20,7 +20,7 @@ namespace Tests
 
             for (int i = 0; i < 3; i++)
             {
-                testList.Add("C:\\development\\1.png");
+                testList.Add("C:\\development\\poste.jpg");
             }
 
             JsonUtil<List<string>>.WriteJsonOnFile(testList, OutputFile);
@@ -68,10 +68,11 @@ namespace Tests
 
             //List<string> imagesList = RequestJsonFileReader(requestPath);
 
-            Program.Main(new string[] { "ObjectDetection", "--modelDir", @"C:\POD-VERA\MachineLearningModels\vera_poles_trees",
-                "--listFile", requestPath, "--outputDir", "C:\\temp", "--logPath", "C:\\Logs\\MachineLearningToolkit.log" });
+            Program.Main(new string[] { "ObjectDetection", "--modelDir", ModelDir,
+                "--listFile", requestPath, "--outputDir", OutputDir, "--logPath", "C:\\Logs\\MachineLearningToolkit.log" });
 
-            //ObjectDetection test = new ObjectDetection(ModelDir);
+            //ObjectDetection 
+            //= new ObjectDetection(ModelDir);
 
             //var results = test.Inference(requestPath);
 
