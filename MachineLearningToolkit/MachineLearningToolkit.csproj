@@ -18,14 +18,8 @@
     <RepositoryUrl>https://github.com/coelhojs/Machine-Learning-CSharp</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
-    <Configurations>Debug;Release;Release2</Configurations>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="InceptionV3\**" />
-    <EmbeddedResource Remove="InceptionV3\**" />
-    <None Remove="InceptionV3\**" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">

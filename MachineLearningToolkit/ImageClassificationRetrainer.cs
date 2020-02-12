@@ -293,8 +293,8 @@ namespace MachineLearningToolkit
 
                 //File.Copy("InceptionV3.zip", pre_trained_model);
 
-                //if (Directory.Exists(Path.Combine(TrainDir, "tfhub_modules")))
-                //    Directory.Delete(Path.Combine(TrainDir, "tfhub_modules"));
+                if (Directory.Exists("./tfhub_modules"))
+                    Directory.Delete("./tfhub_modules", true);
 
                 ZipFile.ExtractToDirectory(pre_trained_model, "./");
 
@@ -587,7 +587,19 @@ namespace MachineLearningToolkit
                 print($"Procurando imagens em '{dir_name}'");
                 var file_list = Directory.GetFiles(sub_dir);
                 if (len(file_list) < 20)
-                    print($"AVISO: A pasta possui menos de 20 imagens, o que poderá gerar resultados ruins.");
+                    Log.Warn("A pasta possui menos de 20 imagens, o que poderá gerar resultados ruins.");
+
+                for (int i = 0; i < len(file_list); i++)
+                {
+                    if (Path.GetExtension(file_list[i]) == ".jpg")
+                    {
+                        string newName = Path.ChangeExtension(file_list[i], ".jpeg");
+
+                        File.Move(file_list[i], newName);
+
+                        file_list[i] = newName;
+                    }
+                }
 
                 var label_name = dir_name.ToLower();
                 result[label_name] = new Dictionary<string, string[]>();
