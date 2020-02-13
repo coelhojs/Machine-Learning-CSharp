@@ -186,10 +186,6 @@ namespace MachineLearningToolkit
                             Log.Info("Treinamento concluído com acurácia superior a 75%.");
                             //Console.WriteLine(outputFile);
                         }
-
-                        //JsonUtil<List<ClassificationInference>>.WriteJsonOnFile(results, outputFile);
-
-
                     }
                     catch (Exception ex)
                     {
