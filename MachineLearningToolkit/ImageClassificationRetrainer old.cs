@@ -596,8 +596,10 @@ namespace MachineLearningToolkit
 
                 for (int i = 0; i < len(file_list); i++)
                 {
-                    if (Path.GetExtension(file_list[i]) == ".jpg")
+                    if ((Path.GetExtension(file_list[i]) == ".jpg") || (Path.GetExtension(file_list[i]) == ".jpeg"))
                     {
+                        var jpgImg = Image.FromFile(file_list[i]);
+                        jpgImg.
                         string newName = Path.ChangeExtension(file_list[i], ".jpeg");
 
                         File.Move(file_list[i], newName);

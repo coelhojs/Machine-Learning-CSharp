@@ -703,7 +703,6 @@ namespace MachineLearningToolkit
                     }
                 }
 
-
                 var label_name = dir_name.ToLower();
                 result[label_name] = new Dictionary<string, string[]>();
                 int testing_count = (int)Math.Floor(file_list.Length * testing_percentage);
