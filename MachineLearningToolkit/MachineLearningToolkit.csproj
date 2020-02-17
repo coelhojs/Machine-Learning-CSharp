@@ -65,6 +65,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ImageClassificationRetrainer.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="InceptionV3.zip">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

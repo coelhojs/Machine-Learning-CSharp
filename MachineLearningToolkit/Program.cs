@@ -3,6 +3,7 @@ using NLog;
 using NLog.Fluent;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Permissions;
 
@@ -21,6 +22,7 @@ namespace MachineLearningToolkit
         private static string trainDir = "";
         private static string trainImagesDir = "";
         private static int trainingSteps = 0;
+        internal static Process Process;
         public static void Main(string[] args)
         {
             try
@@ -157,41 +159,62 @@ namespace MachineLearningToolkit
                 {
                     try
                     {
-                        ImageClassificationRetrainer retrainer;
+                        string result = ExecuteExternalProgram.ExecuteAndGetOutput("python",
+                            $"ImageClassificationRetrainer.py --how_many_training_steps 4000 --image_dir {trainImagesDir} --saved_model_dir {trainDir}", null);
 
-                        Log.Info("Iniciando retreinamento do modelo de classificação de imagens");
+                        result = result?.TrimEnd('\r', '\n');
 
-                        if (string.IsNullOrEmpty(trainImagesDir) && trainingSteps == 0)
+                        if (result == null || result.Equals(""))
                         {
-                            retrainer = new ImageClassificationRetrainer(trainDir);
-                        }
-                        else if (trainingSteps == 0)
-                        {
-                            retrainer = new ImageClassificationRetrainer(trainDir, trainImagesDir);
-                        }
-                        else if (string.IsNullOrEmpty(trainImagesDir))
-                        {
-                            retrainer = new ImageClassificationRetrainer(trainDir, "", trainingSteps);
-                        }
-                        else
-                        {
-                            retrainer = new ImageClassificationRetrainer(trainDir, trainImagesDir);
+                            result = Process.StandardError.ReadToEnd();
+                            throw new Exception(result);
                         }
 
-                        var trainingResults = retrainer.Retrain();
-
-                        if (trainingResults)
-                        {
-                            //string outputFile = Path.Combine(trainDir, "TrainingResults.ImageClassificationRetrainer");
-                            Log.Info("Treinamento concluído com acurácia superior a 75%.");
-                            //Console.WriteLine(outputFile);
-                        }
+                        Console.WriteLine(result);
                     }
                     catch (Exception ex)
                     {
-                        Log.Error($"Houve um erro no retreinamento do modelo de classificação de imagens: {ex.Message}");
+                        Log.Error($"Houve um erro ao iniciar a o retreinamento: {ex.Message}");
+                        throw ex;
                     }
+                    finally
+                    {
+                        //FileUtil.TryRemoveFile(imagesListPath, Log);
+                        Process?.Close();
+                    }
+                    //ImageClassificationRetrainer retrainer;
 
+                    //Log.Info("Iniciando retreinamento do modelo de classificação de imagens");
+
+                    //if (string.IsNullOrEmpty(trainImagesDir) && trainingSteps == 0)
+                    //{
+                    //    retrainer = new ImageClassificationRetrainer(trainDir);
+                    //}
+                    //else if (trainingSteps == 0)
+                    //{
+                    //    retrainer = new ImageClassificationRetrainer(trainDir, trainImagesDir);
+                    //}
+                    //else if (string.IsNullOrEmpty(trainImagesDir))
+                    //{
+                    //    retrainer = new ImageClassificationRetrainer(trainDir, "", trainingSteps);
+                    //}
+                    //else
+                    //{
+                    //    retrainer = new ImageClassificationRetrainer(trainDir, trainImagesDir);
+                    //}
+
+                    //var trainingResults = retrainer.Retrain();
+
+                    //if (trainingResults)
+                    //{
+                    //    //string outputFile = Path.Combine(trainDir, "TrainingResults.ImageClassificationRetrainer");
+                    //    Log.Info("Treinamento concluído com acurácia superior a 75%.");
+                    //    //Console.WriteLine(outputFile);
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    Log.Error($"Houve um erro no retreinamento do modelo de classificação de imagens: {ex.Message}");
+                    //}
                 }
             }
 

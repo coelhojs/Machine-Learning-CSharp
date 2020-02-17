@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using MachineLearningToolkit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
