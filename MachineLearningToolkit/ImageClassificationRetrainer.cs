@@ -59,9 +59,10 @@ namespace MachineLearningToolkit
         Dictionary<string, Dictionary<string, string[]>> image_lists;
         int how_many_training_steps = 4000;
         int eval_step_interval = 10;
-        int train_batch_size = 100;
+        //int train_batch_size = 100;
+        int train_batch_size = 10;
         int test_batch_size = -1;
-        int validation_batch_size = 100;
+        int validation_batch_size = -1;
         int intermediate_store_frequency = 500;
         int class_count = 0;
         const int MAX_NUM_IMAGES_PER_CLASS = 134217727;
@@ -138,10 +139,10 @@ namespace MachineLearningToolkit
 
                 return test_accuracy > 0.75f;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
-                throw;
+                throw ex;
             }
         }
 
@@ -397,6 +398,7 @@ namespace MachineLearningToolkit
                 }
 
                 return (bottlenecks.ToArray(), ground_truths.ToArray(), filenames.ToArray());
+                //return (NumSharp.NDArray.FromMultiDimArray<Array>(bottlenecks), ground_truths.ToArray(), filenames.ToArray());
             }
             catch (Exception ex)
             {
@@ -449,40 +451,47 @@ namespace MachineLearningToolkit
             string image_dir, string bottleneck_dir, Tensor jpeg_data_tensor, Tensor decoded_image_tensor,
             Tensor resized_input_tensor, Tensor bottleneck_tensor, string module_name)
         {
-            int how_many_bottlenecks = 0;
-            var kvs = image_lists.ToArray();
-            var categories = new string[] { "training", "testing", "validation" };
-            for (int i = 0; i < kvs.Length; i++)
-            //Parallel.For(0, kvs.Length, i =>
+            try
             {
-                var (label_name, label_lists) = kvs[i];
-
-                for (int j = 0; j < categories.Length; j++)
-
-                //Parallel.For(0, categories.Length, j =>
+                int how_many_bottlenecks = 0;
+                var kvs = image_lists.ToArray();
+                var categories = new string[] { "training", "testing", "validation" };
+                for (int i = 0; i < kvs.Length; i++)
+                //Parallel.For(0, kvs.Length, i =>
                 {
-                    var category = categories[j];
-                    var category_list = label_lists[category];
-                    foreach (var (index, unused_base_name) in enumerate(category_list))
-                    {
-                        try
-                        {
-                            get_or_create_bottleneck(sess, image_lists, label_name, index, image_dir, category,
-                            bottleneck_dir, jpeg_data_tensor, decoded_image_tensor,
-                            resized_input_tensor, bottleneck_tensor, module_name);
-                            how_many_bottlenecks++;
-                            if (how_many_bottlenecks % 300 == 0)
-                                print($"{how_many_bottlenecks} bottleneck files created.");
-                        }
-                        catch (Exception ex)
-                        {
+                    var (label_name, label_lists) = kvs[i];
 
-                            throw ex;
+                    for (int j = 0; j < categories.Length; j++)
+
+                    //Parallel.For(0, categories.Length, j =>
+                    {
+                        var category = categories[j];
+                        var category_list = label_lists[category];
+                        foreach (var (index, unused_base_name) in enumerate(category_list))
+                        {
+                            try
+                            {
+                                get_or_create_bottleneck(sess, image_lists, label_name, index, image_dir, category,
+                                bottleneck_dir, jpeg_data_tensor, decoded_image_tensor,
+                                resized_input_tensor, bottleneck_tensor, module_name);
+                                how_many_bottlenecks++;
+                                if (how_many_bottlenecks % 300 == 0)
+                                    print($"{how_many_bottlenecks} bottleneck files created.");
+                            }
+                            catch (Exception ex)
+                            {
+
+                                throw ex;
+                            }
                         }
+                        //});
                     }
                     //});
                 }
-                //});
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
         }
 
@@ -506,6 +515,11 @@ namespace MachineLearningToolkit
                                            bottleneck_tensor);
                 var bottleneck_string = File.ReadAllText(bottleneck_path);
                 var bottleneck_values = Array.ConvertAll(bottleneck_string.Split(','), x => float.Parse(x));
+
+                //var bottleneck_values = Array.ConvertAll(bottleneck_string.Split(','), x => float.Parse(x))
+                //    .Where(value => value != 0).ToArray();
+
+                //return np.squeeze(bottleneck_values);
                 return bottleneck_values;
             }
             catch (Exception ex)
@@ -671,37 +685,33 @@ namespace MachineLearningToolkit
                 var dir_name = sub_dir.Split(Path.DirectorySeparatorChar).Last();
                 print($"Looking for images in '{dir_name}'");
                 var file_list = Directory.GetFiles(sub_dir);
-
-                file_list = file_list.Where(item =>
-                {
-                    return item.Contains(".jpg") || item.Contains(".jpeg") || item.Contains(".png") ||
-                    item.Contains(".JPG") || item.Contains(".JPEG") || item.Contains(".PNG");
-                }).ToArray();
-
+                //var file_list = Directory.GetFiles(sub_dir)
+                //    .Where(item => item.ToLower().EndsWith("jpg") || item.ToLower().EndsWith("jpeg") || item.ToLower().EndsWith("png"))
+                //    .ToArray();
 
                 if (len(file_list) < 20)
                     print($"WARNING: Folder has less than 20 images, which may cause issues.");
 
-                for (int i = 0; i < len(file_list); i++)
-                {
-                    if ((Path.GetExtension(file_list[i]) == ".jpg") || (Path.GetExtension(file_list[i]) == ".jpeg") ||
-                        (Path.GetExtension(file_list[i]) == ".JPG") || (Path.GetExtension(file_list[i]) == ".JPEG"))
-                    {
-                        var newImg = Image.FromFile(file_list[i]);
-                        string newName = Path.ChangeExtension(file_list[i], ".jpeg");
+                //for (int i = 0; i < len(file_list); i++)
+                //{
+                //    if ((Path.GetExtension(file_list[i]) == ".jpg") || (Path.GetExtension(file_list[i]) == ".jpeg") ||
+                //        (Path.GetExtension(file_list[i]) == ".JPG") || (Path.GetExtension(file_list[i]) == ".JPEG"))
+                //    {
+                //        var newImg = Image.FromFile(file_list[i]);
+                //        string newName = Path.ChangeExtension(file_list[i], ".jpeg");
 
-                        if (file_list[i] != newName)
-                        {
-                            File.Delete(file_list[i]);
-                            file_list[i] = newName;
-                        }
+                //        if (file_list[i] != newName)
+                //        {
+                //            File.Delete(file_list[i]);
+                //            file_list[i] = newName;
+                //        }
 
-                        newImg.Save(newName);
+                //        newImg.Save(newName);
 
-                        newImg.Dispose();
+                //        newImg.Dispose();
 
-                    }
-                }
+                //    }
+                //}
 
                 var label_name = dir_name.ToLower();
                 result[label_name] = new Dictionary<string, string[]>();
