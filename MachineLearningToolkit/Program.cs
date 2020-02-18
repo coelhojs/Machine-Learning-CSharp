@@ -44,31 +44,31 @@ namespace MachineLearningToolkit
                     switch (value)
                     {
                         case "--modelDir":
-                            modelDir = args[i + 1];
+                            modelDir = PathNormalizer.NormalizeDirectory(args[i + 1]);
                             break;
                         case "--listFile":
-                            listFile = args[i + 1];
+                            listFile = PathNormalizer.NormalizeFilePath(args[i + 1]);
                             break;
                         case "--outputDir":
-                            outputDir = args[i + 1];
+                            outputDir = PathNormalizer.NormalizeDirectory(args[i + 1]);
                             break;
                         case "--graphFile":
-                            graphFile = args[i + 1];
+                            graphFile = PathNormalizer.NormalizeFilePath(args[i + 1]);
                             break;
                         case "--labelFile":
-                            labelFile = args[i + 1];
+                            labelFile = PathNormalizer.NormalizeFilePath(args[i + 1]);
                             break;
                         case "--workspaceDir":
-                            trainDir = args[i + 1];
+                            trainDir = PathNormalizer.NormalizeDirectory(args[i + 1]);
                             break;
                         case "--imagesDir":
-                            trainImagesDir = args[i + 1];
+                            trainImagesDir = PathNormalizer.NormalizeDirectory(args[i + 1]);
                             break;
                         case "--trainingSteps":
                             trainingSteps = int.Parse(args[i + 1]);
                             break;
                         case "--logPath":
-                            logPath = args[i + 1];
+                            logPath = PathNormalizer.NormalizeFilePath(args[i + 1]);
                             break;
                     }
                 }
@@ -182,39 +182,6 @@ namespace MachineLearningToolkit
                         //FileUtil.TryRemoveFile(imagesListPath, Log);
                         Process?.Close();
                     }
-                    //ImageClassificationRetrainer retrainer;
-
-                    //Log.Info("Iniciando retreinamento do modelo de classificação de imagens");
-
-                    //if (string.IsNullOrEmpty(trainImagesDir) && trainingSteps == 0)
-                    //{
-                    //    retrainer = new ImageClassificationRetrainer(trainDir);
-                    //}
-                    //else if (trainingSteps == 0)
-                    //{
-                    //    retrainer = new ImageClassificationRetrainer(trainDir, trainImagesDir);
-                    //}
-                    //else if (string.IsNullOrEmpty(trainImagesDir))
-                    //{
-                    //    retrainer = new ImageClassificationRetrainer(trainDir, "", trainingSteps);
-                    //}
-                    //else
-                    //{
-                    //    retrainer = new ImageClassificationRetrainer(trainDir, trainImagesDir);
-                    //}
-
-                    //var trainingResults = retrainer.Retrain();
-
-                    //if (trainingResults)
-                    //{
-                    //    //string outputFile = Path.Combine(trainDir, "TrainingResults.ImageClassificationRetrainer");
-                    //    Log.Info("Treinamento concluído com acurácia superior a 75%.");
-                    //    //Console.WriteLine(outputFile);
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    Log.Error($"Houve um erro no retreinamento do modelo de classificação de imagens: {ex.Message}");
-                    //}
                 }
             }
 
