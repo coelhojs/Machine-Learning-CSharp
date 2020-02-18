@@ -1,0 +1,16 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Arquivo Atual",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["--how_many_training_steps", "500", "--image_dir", "C:\\development\\RetrainingImages", "--saved_model_dir", "C:\\POD-VERA\\Training", "--log_path", "C:\\Logs\\MachineLearningToolkit.log", "--workspace_dir", "C:\\POD-VERA\\Training", "--destination_model_dir", "C:\\POD-VERA\\ExternalTest"]
+        }
+    ]
+}

@@ -160,7 +160,7 @@ namespace MachineLearningToolkit
                     try
                     {
                         string result = ExecuteExternalProgram.ExecuteAndGetOutput("python",
-                            $"ImageClassificationRetrainer.py --how_many_training_steps 4000 --image_dir {trainImagesDir} --saved_model_dir {trainDir} --log_path {logPath}", null);
+                            $"ImageClassificationRetrainer.py --how_many_training_steps 4000 --image_dir {trainImagesDir} --saved_model_dir {trainDir} --log_path {logPath} --workspace_dir {trainDir}", null);
 
                         result = result?.TrimEnd('\r', '\n');
 

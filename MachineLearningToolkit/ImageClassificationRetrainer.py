@@ -33,6 +33,16 @@ except:
 finally:
     import tensorflow_hub as hub
 
+
+bottleneck_dir_path = ""
+checkpoint_path = ""
+destination_model_dir_path = ""
+intermediate_output_graphs_dir_path = ""
+output_graph_path = ""
+output_labels_path = ""
+saved_model_dir_path = ""
+summaries_dir_path = ""
+
 FLAGS = None
 
 MAX_NUM_IMAGES_PER_CLASS = 2 ** 27 - 1  # ~134M
@@ -65,7 +75,7 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
       The order of items defines the class indices.
     """
     if not tf.gfile.Exists(image_dir):
-        tf.logging.error("Image directory '" + image_dir + "' not found.")
+        logging.error("Image directory '" + image_dir + "' not found.")
         return None
     result = collections.OrderedDict()
     sub_dirs = sorted(x[0] for x in tf.gfile.Walk(image_dir))
@@ -84,18 +94,18 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
 
         if dir_name == image_dir:
             continue
-        tf.logging.info("Looking for images in '" + dir_name + "'")
+        logging.info("Looking for images in '" + dir_name + "'")
         for extension in extensions:
             file_glob = os.path.join(image_dir, dir_name, '*.' + extension)
             file_list.extend(tf.gfile.Glob(file_glob))
         if not file_list:
-            tf.logging.warning('No files found')
+            logging.warning('No files found')
             continue
         if len(file_list) < 20:
-            tf.logging.warning(
+            logging.warning(
                 'WARNING: Folder has less than 20 images, which may cause issues.')
         elif len(file_list) > MAX_NUM_IMAGES_PER_CLASS:
-            tf.logging.warning('WARNING: Folder {} has more than {} images. Some images will '
+            logging.warning('WARNING: Folder {} has more than {} images. Some images will '
                                'never be selected.'.format(dir_name, MAX_NUM_IMAGES_PER_CLASS))
         label_name = re.sub(r'[^a-z0-9]+', ' ', dir_name.lower())
         training_images = []
@@ -157,13 +167,13 @@ def get_image_path(image_lists, label_name, index, image_dir, category):
 
     """
     if label_name not in image_lists:
-        tf.logging.fatal('Label does not exist %s.', label_name)
+        logging.fatal('Label does not exist %s.', label_name)
     label_lists = image_lists[label_name]
     if category not in label_lists:
-        tf.logging.fatal('Category does not exist %s.', category)
+        logging.fatal('Category does not exist %s.', category)
     category_list = label_lists[category]
     if not category_list:
-        tf.logging.fatal('Label %s has no images in the category %s.',
+        logging.fatal('Label %s has no images in the category %s.',
                          label_name, category)
     mod_index = index % len(category_list)
     base_name = category_list[mod_index]
@@ -261,11 +271,11 @@ def create_bottleneck_file(bottleneck_path, image_lists, label_name, index,
                            decoded_image_tensor, resized_input_tensor,
                            bottleneck_tensor):
     """Create a single bottleneck file."""
-    tf.logging.debug('Creating bottleneck at ' + bottleneck_path)
+    logging.debug('Creating bottleneck at ' + bottleneck_path)
     image_path = get_image_path(image_lists, label_name, index,
                                 image_dir, category)
     if not tf.gfile.Exists(image_path):
-        tf.logging.fatal('File does not exist %s', image_path)
+        logging.fatal('File does not exist %s', image_path)
     image_data = tf.gfile.GFile(image_path, 'rb').read()
     try:
         bottleneck_values = run_bottleneck_on_image(sess, image_data, jpeg_data_tensor, decoded_image_tensor,
@@ -324,7 +334,7 @@ def get_or_create_bottleneck(sess, image_lists, label_name, index, image_dir,
     try:
         bottleneck_values = [float(x) for x in bottleneck_string.split(',')]
     except ValueError:
-        tf.logging.warning('Invalid float found, recreating bottleneck')
+        logging.warning('Invalid float found, recreating bottleneck')
         did_hit_error = True
     if did_hit_error:
         create_bottleneck_file(bottleneck_path, image_lists, label_name, index,
@@ -378,7 +388,7 @@ def cache_bottlenecks(sess, image_lists, image_dir, bottleneck_dir,
 
                 how_many_bottlenecks += 1
                 if how_many_bottlenecks % 100 == 0:
-                    tf.logging.info(str(how_many_bottlenecks) +
+                    logging.info(str(how_many_bottlenecks) +
                                     ' bottleneck files created.')
 
 
@@ -481,7 +491,7 @@ def get_random_distorted_bottlenecks(sess, image_lists, how_many, category, imag
         image_path = get_image_path(image_lists, label_name, image_index, image_dir,
                                     category)
         if not tf.gfile.Exists(image_path):
-            tf.logging.fatal('File does not exist %s', image_path)
+            logging.fatal('File does not exist %s', image_path)
         jpeg_data = tf.gfile.GFile(image_path, 'rb').read()
         # Note that we materialize the distorted_image_data as a numpy array before
         # sending running inference on the image.  This involves 2 memory copies
@@ -744,7 +754,7 @@ def run_final_eval(train_session, module_spec, class_count, image_lists,
     """
     test_bottlenecks, test_ground_truth, test_filenames = (get_random_cached_bottlenecks(train_session, image_lists,
                                                                                          FLAGS.test_batch_size,
-                                                                                         'testing', FLAGS.bottleneck_dir,
+                                                                                         'testing', bottleneck_dir_path,
                                                                                          FLAGS.image_dir, jpeg_data_tensor,
                                                                                          decoded_image_tensor, resized_image_tensor,
                                                                                          bottleneck_tensor, FLAGS.tfhub_module))
@@ -756,14 +766,14 @@ def run_final_eval(train_session, module_spec, class_count, image_lists,
         bottleneck_input: test_bottlenecks,
         ground_truth_input: test_ground_truth
     })
-    tf.logging.info('Final test accuracy = %.1f%% (N=%d)' %
+    logging.info('Final test accuracy = %.1f%% (N=%d)' %
                     (test_accuracy * 100, len(test_bottlenecks)))
 
     if FLAGS.print_misclassified_test_images:
-        tf.logging.info('=== MISCLASSIFIED TEST IMAGES ===')
+        logging.info('=== MISCLASSIFIED TEST IMAGES ===')
         for i, test_filename in enumerate(test_filenames):
             if predictions[i] != test_ground_truth[i]:
-                tf.logging.info('%70s  %s' % (test_filename,
+                logging.info('%70s  %s' % (test_filename,
                                               list(image_lists.keys())[predictions[i]]))
 
 
@@ -813,19 +823,6 @@ def save_graph_to_file(graph_file_name, module_spec, class_count):
 
 
 def prepare_file_system():
-
-    bottleneck_dir_path = os.path.join(
-        FLAGS.workspace_dir, FLAGS.bottleneck_dir)
-    checkpoint_path = os.path.join(FLAGS.workspace_dir, FLAGS.checkpoint_path)
-    image_dir_path = os.path.join(FLAGS.workspace_dir, FLAGS.image_dir)
-    intermediate_output_graphs_dir_path = os.path.join(
-        FLAGS.workspace_dir, FLAGS.intermediate_output_graphs_dir)
-    output_graph_path = os.path.join(FLAGS.workspace_dir, FLAGS.output_graph)
-    output_labels_path = os.path.join(FLAGS.workspace_dir, FLAGS.output_labels)
-    saved_model_dir_path = os.path.join(
-        FLAGS.workspace_dir, FLAGS.saved_model_dir)
-    summaries_dir_path = os.path.join(FLAGS.workspace_dir, FLAGS.summaries_dir)
-
     # Set up the directory we'll write summaries to for TensorBoard
     if tf.gfile.Exists(summaries_dir_path):
         tf.gfile.DeleteRecursively(summaries_dir_path)
@@ -835,20 +832,11 @@ def prepare_file_system():
     if FLAGS.intermediate_store_frequency > 0:
         ensure_dir_exists(intermediate_output_graphs_dir_path)
 
-    if not os.path.exists(saved_model_dir_path):
-        os.mkdir(saved_model_dir_path)
-
-    if not os.path.exists(intermediate_output_graphs_dir_path):
-        os.mkdir(intermediate_output_graphs_dir_path)
-
-    if not os.path.exists(bottleneck_dir_path):
-        os.mkdir(bottleneck_dir_path)
-
-    if not os.path.exists(checkpoint_path):
-        os.mkdir(checkpoint_path)
-
-    if not os.path.exists(tfhub_module_path):
-        os.mkdir(tfhub_module_path)
+    ensure_dir_exists(bottleneck_dir_path)
+    ensure_dir_exists(checkpoint_path)
+    ensure_dir_exists(destination_model_dir_path)
+    ensure_dir_exists(intermediate_output_graphs_dir_path)
+    ensure_dir_exists(saved_model_dir_path)
 
     return
 
@@ -909,11 +897,11 @@ def logging_level_verbosity(logging_verbosity):
       'WARN', 'ERROR', 'FATAL'
     """
     name_to_level = {
-        'FATAL': tf.logging.FATAL,
-        'ERROR': tf.logging.ERROR,
-        'WARN': tf.logging.WARN,
-        'INFO': tf.logging.INFO,
-        'DEBUG': tf.logging.DEBUG
+        'FATAL': logging.FATAL,
+        'ERROR': logging.ERROR,
+        'WARN': logging.WARN,
+        'INFO': logging.INFO,
+        'DEBUG': logging.DEBUG
     }
 
     try:
@@ -924,29 +912,47 @@ def logging_level_verbosity(logging_verbosity):
 
 
 def main(_):
-    # Needed to make sure the logging output is visible.
-    # See https://github.com/tensorflow/tensorflow/issues/3047
-    logging_verbosity = logging_level_verbosity(FLAGS.logging_verbosity)
-    tf.logging.set_verbosity(logging_verbosity)
-
-    if not os.path.exists(image_dir_path):
-        tf.logging.error('Must set flag --image_dir.')
-        return -1
-
+    
+    # Paths global variables
+    global bottleneck_dir_path
+    bottleneck_dir_path = os.path.join(
+        FLAGS.workspace_dir, FLAGS.bottleneck_dir)
+    global checkpoint_path
+    checkpoint_path = os.path.join(FLAGS.workspace_dir, FLAGS.checkpoint_path)
+    global intermediate_output_graphs_dir_path
+    intermediate_output_graphs_dir_path = os.path.join(
+        FLAGS.workspace_dir, FLAGS.intermediate_output_graphs_dir)
+    global output_graph_path
+    output_graph_path = os.path.join(FLAGS.workspace_dir, FLAGS.output_graph)
+    global output_labels_path
+    output_labels_path = os.path.join(FLAGS.workspace_dir, FLAGS.output_labels)
+    global destination_model_dir_path
+    destination_model_dir_path = os.path.join(
+        FLAGS.workspace_dir, FLAGS.destination_model_dir)
+    global saved_model_dir_path
+    saved_model_dir_path = os.path.join(
+        FLAGS.workspace_dir, FLAGS.saved_model_dir)
+    global summaries_dir_path
+    summaries_dir_path = os.path.join(FLAGS.workspace_dir, FLAGS.summaries_dir)
+    
     # Prepare necessary directories that can be used during training
     prepare_file_system()
 
+    if not os.path.exists(FLAGS.image_dir):
+        logging.error('Must set flag --image_dir.')
+        return -1
+    
     # Look at the folder structure, and create lists of all the images.
-    image_lists = create_image_lists(image_dir_path, FLAGS.testing_percentage,
+    image_lists = create_image_lists(FLAGS.image_dir, FLAGS.testing_percentage,
                                      FLAGS.validation_percentage)
     class_count = len(image_lists.keys())
     if class_count == 0:
-        tf.logging.error(
-            'No valid folders of images found at ' + image_dir_path)
+        logging.error(
+            'No valid folders of images found at ' + FLAGS.image_dir)
         return -1
     if class_count == 1:
-        tf.logging.error('Only one valid folder of images found at ' +
-                         image_dir_path + ' - multiple classes are needed for classification.')
+        logging.error('Only one valid folder of images found at ' +
+                         FLAGS.image_dir + ' - multiple classes are needed for classification.')
         return -1
 
     # See if the command-line flags mean we're applying any distortions.
@@ -981,8 +987,8 @@ def main(_):
         else:
             # We'll make sure we've calculated the 'bottleneck' image summaries and
             # cached them on disk.
-            cache_bottlenecks(sess, image_lists, image_dir_path,
-                              bottleneck_dir_path), jpeg_data_tensor,
+            cache_bottlenecks(sess, image_lists, FLAGS.image_dir,
+                              bottleneck_dir_path, jpeg_data_tensor,
                               decoded_image_tensor, resized_image_tensor,
                               bottleneck_tensor, FLAGS.tfhub_module)
 
@@ -1009,12 +1015,12 @@ def main(_):
             if do_distort_images:
                 (train_bottlenecks,
                  train_ground_truth)=get_random_distorted_bottlenecks(sess, image_lists, FLAGS.train_batch_size, 'training',
-                                                                        image_dir_path, distorted_jpeg_data_tensor,
+                                                                        FLAGS.image_dir, distorted_jpeg_data_tensor,
                                                                         distorted_image_tensor, resized_image_tensor, bottleneck_tensor)
             else:
                 (train_bottlenecks,
                  train_ground_truth, _)=get_random_cached_bottlenecks(sess, image_lists, FLAGS.train_batch_size, 'training',
-                                                                        bottleneck_dir_path), image_dir_path, jpeg_data_tensor,
+                                                                        bottleneck_dir_path, FLAGS.image_dir, jpeg_data_tensor,
                                                                         decoded_image_tensor, resized_image_tensor, bottleneck_tensor,
                                                                         FLAGS.tfhub_module)
             # Feed the bottlenecks and ground truth into the graph, and run a
@@ -1031,15 +1037,15 @@ def main(_):
                 train_accuracy, cross_entropy_value = sess.run([evaluation_step, cross_entropy],
                                                                feed_dict={bottleneck_input: train_bottlenecks,
                                                                           ground_truth_input: train_ground_truth})
-                tf.logging.info('%s: Step %d: Train accuracy = %.1f%%' % (
+                logging.info('%s: Step %d: Train accuracy = %.1f%%' % (
                     datetime.now(), i, train_accuracy * 100))
-                tf.logging.info('%s: Step %d: Cross entropy = %f' %
+                logging.info('%s: Step %d: Cross entropy = %f' %
                                 (datetime.now(), i, cross_entropy_value))
                 # TODO: Make this use an eval graph, to avoid quantization
                 # moving averages being updated by the validation set, though in
                 # practice this makes a negligable difference.
                 validation_bottlenecks, validation_ground_truth, _ = (get_random_cached_bottlenecks(sess, image_lists, FLAGS.validation_batch_size, 'validation',
-                                                                                                    bottleneck_dir_path, image_dir_path, jpeg_data_tensor,
+                                                                                                    bottleneck_dir_path, FLAGS.image_dir, jpeg_data_tensor,
                                                                                                     decoded_image_tensor, resized_image_tensor, bottleneck_tensor,
                                                                                                     FLAGS.tfhub_module))
                 # Run a validation step and capture training summaries for TensorBoard
@@ -1048,7 +1054,7 @@ def main(_):
                                                                    feed_dict={bottleneck_input: validation_bottlenecks,
                                                                               ground_truth_input: validation_ground_truth})
                 validation_writer.add_summary(validation_summary, i)
-                tf.logging.info('%s: Step %d: Validation accuracy = %.1f%% (N=%d)' % (datetime.now(), i, validation_accuracy * 100,
+                logging.info('%s: Step %d: Validation accuracy = %.1f%% (N=%d)' % (datetime.now(), i, validation_accuracy * 100,
                                                                                       len(validation_bottlenecks)))
 
             # Store intermediate results
@@ -1058,8 +1064,8 @@ def main(_):
                 # If we want to do an intermediate save, save a checkpoint of the train
                 # graph, to restore into the eval graph.
                 train_saver.save(sess, checkpoint_path)
-                intermediate_file_name = (intermediate_output_graphs_dir_path) + 'intermediate_' + str(i) + '.pb')
-                tf.logging.info(
+                intermediate_file_name = (intermediate_output_graphs_dir_path + 'intermediate_' + str(i) + '.pb')
+                logging.info(
                     'Save intermediate result to : ' + intermediate_file_name)
                 save_graph_to_file(intermediate_file_name, module_spec,
                                    class_count)
@@ -1075,9 +1081,9 @@ def main(_):
 
         # Write out the trained graph and labels with the weights stored as
         # constants.
-        tf.logging.info('Save final result to : ' + output_graph_path)
+        logging.info('Save final result to : ' + output_graph_path)
         if wants_quantization:
-            tf.logging.info(
+            logging.info(
                 'The model is instrumented for quantization with TF-Lite')
         save_graph_to_file(output_graph_path, module_spec, class_count)
         with tf.gfile.GFile(output_labels_path, 'w') as f:
@@ -1095,15 +1101,15 @@ if __name__ == '__main__':
                         help='Path to root folder of the training files.')
     parser.add_argument('--image_dir',
                         type=str,
-                        default='imagens/',
+                        default='imagens',
                         help='Path to folders of labeled images.')
     parser.add_argument('--output_graph',
                         type=str,
-                        default='output/retrained_graph.pb',
+                        default='retrained_graph.pb',
                         help='Where to save the trained graph.')
     parser.add_argument('--intermediate_output_graphs_dir',
                         type=str,
-                        default='intermediate_graphs/',
+                        default='intermediate_graphs',
                         help='Where to save the intermediate graphs.')
     parser.add_argument('--intermediate_store_frequency',
                         type=int,
@@ -1114,7 +1120,7 @@ if __name__ == '__main__':
       """)
     parser.add_argument('--output_labels',
                         type=str,
-                        default='output/label_map.txt',
+                        default='label_map.txt',
                         help='Where to save the trained graph\'s labels.')
     parser.add_argument('--summaries_dir',
                         type=str,
@@ -1202,7 +1208,7 @@ if __name__ == '__main__':
       """)
     parser.add_argument('--random_brightness',
                         type=int,
-                        default=0,
+                        default=25,
                         help="""\
       A percentage determining how much to randomly multiply the training image
       input pixels up or down by.\
@@ -1215,9 +1221,13 @@ if __name__ == '__main__':
       Which TensorFlow Hub module to use. For more options,
       search https://tfhub.dev for image feature vector modules.\
       """)
+    parser.add_argument('--destination_model_dir',
+                        type=str,
+                        default="output",
+                        help='Where to save the exported graph.')
     parser.add_argument('--saved_model_dir',
                         type=str,
-                        default="output/",
+                        default="output",
                         help='Where to save the exported graph.')
     parser.add_argument('--logging_verbosity',
                         type=str,
@@ -1234,7 +1244,7 @@ if __name__ == '__main__':
 
     FLAGS, unparsed = parser.parse_known_args()
 
-    logging.basicConfig(filename=FLAGS.log_path, filemode='a',
+    logging.basicConfig(filename=FLAGS.log_path, filemode='a', level=logging.ERROR,
                         format='%(asctime)s|%(levelname)s|%(message)s')
     
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
