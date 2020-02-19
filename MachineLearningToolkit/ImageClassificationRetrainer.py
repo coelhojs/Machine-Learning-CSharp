@@ -75,7 +75,7 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
       The order of items defines the class indices.
     """
     if not tf.io.gfile.exists(image_dir):
-        logging.error("Image directory '" + image_dir + "' not found.")
+        logging.error("Diretório de imagens '" + image_dir + "' não localizado.")
         return None
     result = collections.OrderedDict()
     sub_dirs = sorted(x[0] for x in tf.io.gfile.walk(image_dir))
@@ -94,19 +94,19 @@ def create_image_lists(image_dir, testing_percentage, validation_percentage):
 
         if dir_name == image_dir:
             continue
-        logging.info("Looking for images in '" + dir_name + "'")
+        logging.info("Procurando imagens em '" + dir_name + "'")
         for extension in extensions:
             file_glob = os.path.join(image_dir, dir_name, '*.' + extension)
             file_list.extend(tf.io.gfile.glob(file_glob))
         if not file_list:
-            logging.warning('No files found')
+            logging.warning('Não foram encontrados arquivos')
             continue
         if len(file_list) < 20:
             logging.warning(
-                'WARNING: Folder has less than 20 images, which may cause issues.')
+                'AVISO: A pasta possui menos de 20 imagens, o que poderá causar resultados indesejados.')
         elif len(file_list) > MAX_NUM_IMAGES_PER_CLASS:
-            logging.warning('WARNING: Folder {} has more than {} images. Some images will '
-                            'never be selected.'.format(dir_name, MAX_NUM_IMAGES_PER_CLASS))
+            logging.warning('AVISO: Diretório {} possui mais de {} imagens. Algumas imagens '
+                            'nunca serão selecionadas no treinamento.'.format(dir_name, MAX_NUM_IMAGES_PER_CLASS))
         label_name = re.sub(r'[^a-z0-9]+', ' ', dir_name.lower())
         training_images = []
         testing_images = []
@@ -167,13 +167,13 @@ def get_image_path(image_lists, label_name, index, image_dir, category):
 
     """
     if label_name not in image_lists:
-        logging.fatal('Label does not exist %s.', label_name)
+        logging.fatal('Categoria não existe %s.', label_name)
     label_lists = image_lists[label_name]
     if category not in label_lists:
-        logging.fatal('Category does not exist %s.', category)
+        logging.fatal('Categoria não existe %s.', category)
     category_list = label_lists[category]
     if not category_list:
-        logging.fatal('Label %s has no images in the category %s.',
+        logging.fatal('Categoria %s não possui imagens %s.',
                       label_name, category)
     mod_index = index % len(category_list)
     base_name = category_list[mod_index]
@@ -271,11 +271,11 @@ def create_bottleneck_file(bottleneck_path, image_lists, label_name, index,
                            decoded_image_tensor, resized_input_tensor,
                            bottleneck_tensor):
     """Create a single bottleneck file."""
-    logging.debug('Creating bottleneck at ' + bottleneck_path)
+    logging.debug('Criando bottlenecks em ' + bottleneck_path)
     image_path = get_image_path(image_lists, label_name, index,
                                 image_dir, category)
     if not tf.io.gfile.exists(image_path):
-        logging.fatal('File does not exist %s', image_path)
+        logging.fatal('Arquivo não existe em %s', image_path)
     image_data = tf.io.gfile.GFile(image_path, 'rb').read()
     try:
         bottleneck_values = run_bottleneck_on_image(sess, image_data, jpeg_data_tensor, decoded_image_tensor,
@@ -334,7 +334,7 @@ def get_or_create_bottleneck(sess, image_lists, label_name, index, image_dir,
     try:
         bottleneck_values = [float(x) for x in bottleneck_string.split(',')]
     except ValueError:
-        logging.warning('Invalid float found, recreating bottleneck')
+        logging.warning('Bottleneck invalido, gerando um novo arquivo')
         did_hit_error = True
     if did_hit_error:
         create_bottleneck_file(bottleneck_path, image_lists, label_name, index,
@@ -389,7 +389,7 @@ def cache_bottlenecks(sess, image_lists, image_dir, bottleneck_dir,
                 how_many_bottlenecks += 1
                 if how_many_bottlenecks % 100 == 0:
                     logging.info(str(how_many_bottlenecks) +
-                                 ' bottleneck files created.')
+                                 ' bottlenecks criados.')
 
 
 def get_random_cached_bottlenecks(sess, image_lists, how_many, category,
@@ -491,7 +491,7 @@ def get_random_distorted_bottlenecks(sess, image_lists, how_many, category, imag
         image_path = get_image_path(image_lists, label_name, image_index, image_dir,
                                     category)
         if not tf.io.gfile.exists(image_path):
-            logging.fatal('File does not exist %s', image_path)
+            logging.fatal('Arquivo inexistente: %s', image_path)
         jpeg_data = tf.io.gfile.GFile(image_path, 'rb').read()
         # Note that we materialize the distorted_image_data as a numpy array before
         # sending running inference on the image.  This involves 2 memory copies
@@ -767,7 +767,7 @@ def run_final_eval(train_session, module_spec, class_count, image_lists,
         bottleneck_input: test_bottlenecks,
         ground_truth_input: test_ground_truth
     })
-    logging.info('Final test accuracy = %.1f%% (N=%d)' %
+    logging.info('Acurácia final = %.1f%% (N=%d)' %
                  (test_accuracy * 100, len(test_bottlenecks)))
 
     if FLAGS.print_misclassified_test_images:
@@ -922,33 +922,50 @@ def logging_level_verbosity(logging_verbosity):
 
 def main(_):
     # Paths global variables
-    global bottleneck_dir_path
-    bottleneck_dir_path = os.path.join(
-        FLAGS.workspace_dir, FLAGS.bottleneck_dir)
-    global checkpoint_path
-    checkpoint_path = os.path.join(FLAGS.workspace_dir, FLAGS.checkpoint_path)
-    global intermediate_output_graphs_dir_path
-    intermediate_output_graphs_dir_path = os.path.join(
-        FLAGS.workspace_dir, FLAGS.intermediate_output_graphs_dir)
-    global destination_model_dir_path
-    if len(destination_model_dir_path) == 0:
-        destination_model_dir_path = os.path.join(
-            FLAGS.workspace_dir, FLAGS.destination_model_dir)
-    global output_graph_path
-    output_graph_path = os.path.join(FLAGS.destination_model_dir, FLAGS.output_graph)
-    global output_labels_path
-    output_labels_path = os.path.join(FLAGS.destination_model_dir, FLAGS.output_labels)
-    global saved_model_dir_path
-    saved_model_dir_path = os.path.join(
-        FLAGS.workspace_dir, FLAGS.saved_model_dir)
-    global summaries_dir_path
-    summaries_dir_path = os.path.join(FLAGS.workspace_dir, FLAGS.summaries_dir)
+    try:
+
+        if tf.io.gfile.exists(FLAGS.workspace_dir):
+            tf.io.gfile.rmtree(FLAGS.workspace_dir)
+
+        tf.io.gfile.makedirs(FLAGS.workspace_dir)
+
+        global bottleneck_dir_path
+        bottleneck_dir_path = os.path.join(
+            FLAGS.workspace_dir, FLAGS.bottleneck_dir)
+        global checkpoint_path
+        checkpoint_path = os.path.join(
+            FLAGS.workspace_dir, FLAGS.checkpoint_path)
+        global intermediate_output_graphs_dir_path
+        intermediate_output_graphs_dir_path = os.path.join(
+            FLAGS.workspace_dir, FLAGS.intermediate_output_graphs_dir)
+        global destination_model_dir_path
+        if len(destination_model_dir_path) == 0:
+            destination_model_dir_path = os.path.join(
+                FLAGS.workspace_dir, FLAGS.destination_model_dir)
+        global output_graph_path
+        output_graph_path = os.path.join(
+            FLAGS.destination_model_dir, FLAGS.output_graph)
+        global output_labels_path
+        output_labels_path = os.path.join(
+            FLAGS.destination_model_dir, FLAGS.output_labels)
+        global saved_model_dir_path
+        saved_model_dir_path = os.path.join(
+            FLAGS.workspace_dir, FLAGS.saved_model_dir)
+        global summaries_dir_path
+        summaries_dir_path = os.path.join(
+            FLAGS.workspace_dir, FLAGS.summaries_dir)
+
+    except Exception as ex:
+        logging.warning(f'Houve um erro na organização de diretórios. Feche todas as aplicações que estejam utilizando ou visualizando os arquivos relacionados ao treinamento e tente novamente. Mensagem: {ex}')
+
+    if not len(FLAGS.tfhub_module_path) == 0:
+        os.environ["TFHUB_CACHE_DIR"] = FLAGS.tfhub_module_path
 
     # Prepare necessary directories that can be used during training
     prepare_file_system()
 
     if not os.path.exists(FLAGS.image_dir):
-        logging.error('Must set flag --image_dir.')
+        logging.error('O parâmetro --image_dir é obrigatório.')
         return -1
 
     # Look at the folder structure, and create lists of all the images.
@@ -957,11 +974,11 @@ def main(_):
     class_count = len(image_lists.keys())
     if class_count == 0:
         logging.error(
-            'No valid folders of images found at ' + FLAGS.image_dir)
+            'Não foram encontradas imagens válidas no diretório: ' + FLAGS.image_dir)
         return -1
     if class_count == 1:
-        logging.error('Only one valid folder of images found at ' +
-                      FLAGS.image_dir + ' - multiple classes are needed for classification.')
+        logging.error('Apenas um diretório de imagens foi localizado no parâmetro informado ' +
+                      FLAGS.image_dir + ' - são necessárias múltiplas classes para o treinamento do modelo.')
         return -1
 
     # See if the command-line flags mean we're applying any distortions.
@@ -1046,9 +1063,9 @@ def main(_):
                 train_accuracy, cross_entropy_value = sess.run([evaluation_step, cross_entropy],
                                                                feed_dict={bottleneck_input: train_bottlenecks,
                                                                           ground_truth_input: train_ground_truth})
-                logging.info('%s: Step %d: Train accuracy = %.1f%%' % (
+                logging.info('%s: Passo %d: Acurácia atual do treinamento = %.1f%%' % (
                     datetime.now(), i, train_accuracy * 100))
-                logging.info('%s: Step %d: Cross entropy = %f' %
+                logging.info('%s: Passo %d: Entropia cruzada = %f' %
                              (datetime.now(), i, cross_entropy_value))
                 # TODO: Make this use an eval graph, to avoid quantization
                 # moving averages being updated by the validation set, though in
@@ -1063,7 +1080,7 @@ def main(_):
                                                                    feed_dict={bottleneck_input: validation_bottlenecks,
                                                                               ground_truth_input: validation_ground_truth})
                 validation_writer.add_summary(validation_summary, i)
-                logging.info('%s: Step %d: Validation accuracy = %.1f%% (N=%d)' % (datetime.now(), i, validation_accuracy * 100,
+                logging.info('%s: Passo %d: Acurácia da validação = %.1f%% (N=%d)' % (datetime.now(), i, validation_accuracy * 100,
                                                                                    len(validation_bottlenecks)))
 
             # Store intermediate results
@@ -1076,7 +1093,7 @@ def main(_):
                 intermediate_file_name = (
                     intermediate_output_graphs_dir_path + 'intermediate_' + str(i) + '.pb')
                 logging.info(
-                    'Save intermediate result to : ' + intermediate_file_name)
+                    'Resultados intermediários salvos em : ' + intermediate_file_name)
                 save_graph_to_file(intermediate_file_name, module_spec,
                                    class_count)
 
@@ -1091,16 +1108,17 @@ def main(_):
 
         # Write out the trained graph and labels with the weights stored as
         # constants.
-        logging.info('Save final result to : ' + output_graph_path)
+        logging.info('Resultado final salvo em : ' + output_graph_path)
         if wants_quantization:
             logging.info(
                 'The model is instrumented for quantization with TF-Lite')
-        #save retrained_graph.pb and label_map.txt to destination folder
+        # save retrained_graph.pb and label_map.txt to destination folder
         save_graph_to_file(output_graph_path, module_spec, class_count)
         with tf.io.gfile.GFile(output_labels_path, 'w') as f:
             f.write('\n'.join(image_lists.keys()) + '\n')
 
     sys.exit(0)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -1222,6 +1240,8 @@ if __name__ == '__main__':
       A percentage determining how much to randomly multiply the training image
       input pixels up or down by.\
       """)
+    parser.add_argument('--tfhub_module_path',
+                        type=str)
     parser.add_argument('--tfhub_module',
                         type=str,
                         default=(

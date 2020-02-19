@@ -16,7 +16,7 @@
                 "--log_path", "C:\\Logs\\MachineLearningToolkit.log", 
                 "--workspace_dir", "C:\\POD-VERA\\Training", 
                 "--destination_model_dir", "C:\\POD-VERA\\ExternalTest", 
-                "--tfhub_module", "C:\\development\\Machine-Learning-CSharp\\MachineLearningToolkit\\InceptionV3"
+                "--tfhub_module_path", "C:\\development\\Machine-Learning-CSharp\\MachineLearningToolkit\\InceptionV3"
             ]
         }
     ]
