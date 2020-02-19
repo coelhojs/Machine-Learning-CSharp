@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["--how_many_training_steps", "500", "--image_dir", "C:\\development\\RetrainingImages", "--saved_model_dir", "C:\\POD-VERA\\Training", "--log_path", "C:\\Logs\\MachineLearningToolkit.log", "--workspace_dir", "C:\\POD-VERA\\Training", "--destination_model_dir", "C:\\POD-VERA\\ExternalTest"]
+            "args": ["--how_many_training_steps", "10", "--image_dir", "C:\\development\\RetrainingImages", "--log_path", "C:\\Logs\\MachineLearningToolkit.log", "--workspace_dir", "C:\\POD-VERA\\Training", "--destination_model_dir", "C:\\POD-VERA\\ExternalTest"]
         }
     ]
 }
