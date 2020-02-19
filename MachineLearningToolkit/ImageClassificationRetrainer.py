@@ -921,7 +921,6 @@ def logging_level_verbosity(logging_verbosity):
 
 
 def main(_):
-
     # Paths global variables
     global bottleneck_dir_path
     bottleneck_dir_path = os.path.join(
@@ -931,13 +930,14 @@ def main(_):
     global intermediate_output_graphs_dir_path
     intermediate_output_graphs_dir_path = os.path.join(
         FLAGS.workspace_dir, FLAGS.intermediate_output_graphs_dir)
-    global output_graph_path
-    output_graph_path = os.path.join(FLAGS.workspace_dir, FLAGS.output_graph)
-    global output_labels_path
-    output_labels_path = os.path.join(FLAGS.workspace_dir, FLAGS.output_labels)
     global destination_model_dir_path
-    destination_model_dir_path = os.path.join(
-        FLAGS.workspace_dir, FLAGS.destination_model_dir)
+    if len(destination_model_dir_path) == 0:
+        destination_model_dir_path = os.path.join(
+            FLAGS.workspace_dir, FLAGS.destination_model_dir)
+    global output_graph_path
+    output_graph_path = os.path.join(FLAGS.destination_model_dir, FLAGS.output_graph)
+    global output_labels_path
+    output_labels_path = os.path.join(FLAGS.destination_model_dir, FLAGS.output_labels)
     global saved_model_dir_path
     saved_model_dir_path = os.path.join(
         FLAGS.workspace_dir, FLAGS.saved_model_dir)
@@ -1095,16 +1095,12 @@ def main(_):
         if wants_quantization:
             logging.info(
                 'The model is instrumented for quantization with TF-Lite')
+        #save retrained_graph.pb and label_map.txt to destination folder
         save_graph_to_file(output_graph_path, module_spec, class_count)
         with tf.io.gfile.GFile(output_labels_path, 'w') as f:
             f.write('\n'.join(image_lists.keys()) + '\n')
 
-        if os.path.exists(saved_model_dir_path):
-            export_model(module_spec, class_count, saved_model_dir_path)
-
-        if os.path.exists(destination_model_dir_path):
-            export_model(module_spec, class_count, destination_model_dir_path)
-
+    sys.exit(0)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
