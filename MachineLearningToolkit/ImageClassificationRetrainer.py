@@ -1268,8 +1268,7 @@ if __name__ == '__main__':
                         default='_retrain_checkpoint',
                         help='Where to save checkpoint files.')
     parser.add_argument('--log_path',
-                        type=str,
-                        default=f'C:/Log/ImageClassificationRetrainer-{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}.')
+                        type=str)
 
     FLAGS, unparsed = parser.parse_known_args()
 
