@@ -12,3 +12,4 @@ MachineLearningToolkit.exe ObjectDetection --modelDir C:\development\vera-434\sr
 
 
 
+MachineLearningToolkit.exe ImageClassificationRetrainer --workspaceDir C:\POD-VERA\Training --trainingSteps 1 --outputDir C:\POD-VERA\MachineLearningModels\vera_species_2 --imagesDir C:\temp\RetrainingImages --log_path C:\\Logs\\MachineLearningToolkit.log

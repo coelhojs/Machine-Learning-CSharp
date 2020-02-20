@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Security.Permissions;
 
 namespace MachineLearningToolkit
@@ -19,9 +20,11 @@ namespace MachineLearningToolkit
         private static string logPath = "";
         private static string modelDir = "";
         private static string outputDir = "";
+        private static string retrainerPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "ImageClassificationRetrainer.py");
         private static string trainDir = "";
         private static string trainImagesDir = "";
         private static int trainingSteps = 0;
+        private static string tfhub_module_path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "InceptionV3.zip");
         internal static Process Process;
         public static void Main(string[] args)
         {
@@ -159,27 +162,60 @@ namespace MachineLearningToolkit
                 {
                     try
                     {
-                        string result = ExecuteExternalProgram.ExecuteAndGetOutput("python",
-                            $"ImageClassificationRetrainer.py --how_many_training_steps 4000 --image_dir {trainImagesDir} --saved_model_dir {trainDir} --log_path {logPath} --workspace_dir {trainDir}", null);
+                        string command = $"python {retrainerPath} --how_many_training_steps {trainingSteps} --image_dir {trainImagesDir} --destination_model_dir {outputDir} --log_path {logPath} --workspace_dir {trainDir} --tfhub_module_path {tfhub_module_path}";
 
-                        result = result?.TrimEnd('\r', '\n');
+                        //result = result?.TrimEnd('\r', '\n');
 
-                        if (result == null || result.Equals(""))
+                        //if (result == null || result.Equals(""))
+                        //{
+                        //    result = Process.StandardError.ReadToEnd();
+                        //    throw new Exception(result);
+                        //}
+
+                        var processInfo = new ProcessStartInfo("cmd.exe", "/c " + command);
+                        processInfo.CreateNoWindow = true;
+                        processInfo.UseShellExecute = false;
+                        processInfo.RedirectStandardError = true;
+                        processInfo.RedirectStandardOutput = true;
+
+                        var process = Process.Start(processInfo);
+
+                        process.OutputDataReceived += (object sender, DataReceivedEventArgs e) =>
+                            Console.WriteLine("output>>" + e.Data);
+                        process.BeginOutputReadLine();
+
+                        process.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
+                            Console.WriteLine("error>>" + e.Data);
+                        process.BeginErrorReadLine();
+
+                        process.WaitForExit();
+
+                        Console.WriteLine("ExitCode: {0}", process.ExitCode);
+                        process.Close();
+
+                        if (File.Exists($"{outputDir}\\retrained_graph.pb") && File.Exists($"{outputDir}\\label_map.txt"))
                         {
-                            result = Process.StandardError.ReadToEnd();
-                            throw new Exception(result);
+                            Console.WriteLine(outputDir);
                         }
-
-                        Console.WriteLine(result);
+                        else
+                        {
+                            string message = $"Houve um erro no processo de retreinamento do modelo de classificação de imagens: {trainDir}";
+                            Log.Error(message);
+                            throw new Exception(message);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        Log.Error($"Houve um erro ao iniciar a o retreinamento: {ex.Message}");
-                        throw ex;
+                        if (ex.Message.Contains("Directory not empty"))
+                        {
+                            Log.Error($"Feche todas as aplicações ou visualizador de arquivos que estiverem utilizando o diretório de treinamento: {ex.Message}");
+                        }
+
+                        Directory.Delete(outputDir, true);
+                        Directory.Delete(trainDir, true);
                     }
                     finally
                     {
-                        //FileUtil.TryRemoveFile(imagesListPath, Log);
                         Process?.Close();
                     }
                 }
