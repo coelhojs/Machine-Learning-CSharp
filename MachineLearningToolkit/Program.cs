@@ -71,7 +71,14 @@ namespace MachineLearningToolkit
                             trainingSteps = int.Parse(args[i + 1]);
                             break;
                         case "--logPath":
-                            logPath = PathNormalizer.NormalizeFilePath(args[i + 1]);
+                            if (args[i + 1] != "undefined")
+                            {
+                                logPath = PathNormalizer.NormalizeFilePath(args[i + 1]);
+                            }
+                            else
+                            {
+                                logPath = "";
+                            }
                             break;
                     }
                 }
@@ -90,9 +97,11 @@ namespace MachineLearningToolkit
 
                 // Apply config           
                 NLog.LogManager.Configuration = config;
-
-                if (string.IsNullOrEmpty(modelDir) || string.IsNullOrEmpty(outputDir) || string.IsNullOrEmpty(listFile))
-                    Log.Error("Informe os parametros --modelDir, --listFile --outputDir");
+                if (args[0] != "ImageClassificationRetrainer")
+                {
+                    if (string.IsNullOrEmpty(modelDir) || string.IsNullOrEmpty(outputDir) || string.IsNullOrEmpty(listFile))
+                        Log.Error("Informe os parametros --modelDir, --listFile --outputDir");
+                }
 
                 if (args[0] == "ObjectDetection")
                 {
@@ -163,14 +172,6 @@ namespace MachineLearningToolkit
                     try
                     {
                         string command = $"python {retrainerPath} --how_many_training_steps {trainingSteps} --image_dir {trainImagesDir} --destination_model_dir {outputDir} --log_path {logPath} --workspace_dir {trainDir} --tfhub_module_path {tfhub_module_path}";
-
-                        //result = result?.TrimEnd('\r', '\n');
-
-                        //if (result == null || result.Equals(""))
-                        //{
-                        //    result = Process.StandardError.ReadToEnd();
-                        //    throw new Exception(result);
-                        //}
 
                         var processInfo = new ProcessStartInfo("cmd.exe", "/c " + command);
                         processInfo.CreateNoWindow = true;
