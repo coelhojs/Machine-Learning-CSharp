@@ -169,6 +169,8 @@ namespace MachineLearningToolkit
                 }
                 else if (args[0] == "ImageClassificationRetrainer")
                 {
+                    var process = new Process();
+
                     try
                     {
                         string command = $"python {retrainerPath} --how_many_training_steps {trainingSteps} --image_dir {trainImagesDir} --destination_model_dir {outputDir} --log_path {logPath} --workspace_dir {trainDir} --tfhub_module_path {tfhub_module_path}";
@@ -179,20 +181,9 @@ namespace MachineLearningToolkit
                         processInfo.RedirectStandardError = true;
                         processInfo.RedirectStandardOutput = true;
 
-                        var process = Process.Start(processInfo);
+                        process = Process.Start(processInfo);
 
-                        process.OutputDataReceived += (object sender, DataReceivedEventArgs e) =>
-                            Console.WriteLine("output>>" + e.Data);
-                        process.BeginOutputReadLine();
-
-                        process.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
-                            Console.WriteLine("error>>" + e.Data);
-                        process.BeginErrorReadLine();
-
-                        process.WaitForExit();
-
-                        Console.WriteLine("ExitCode: {0}", process.ExitCode);
-                        process.Close();
+                        process?.WaitForExit();
 
                         if (File.Exists($"{outputDir}\\retrained_graph.pb") && File.Exists($"{outputDir}\\label_map.txt"))
                         {
@@ -200,7 +191,7 @@ namespace MachineLearningToolkit
                         }
                         else
                         {
-                            string message = $"Houve um erro no processo de retreinamento do modelo de classificação de imagens: {trainDir}";
+                            string message = $"Houve um erro no processo de retreinamento do modelo de classificação de imagens: {process?.StandardError.ReadToEnd()}";
                             Log.Error(message);
                             throw new Exception(message);
                         }
@@ -217,7 +208,9 @@ namespace MachineLearningToolkit
                     }
                     finally
                     {
-                        Process?.Close();
+                        process.Close();
+                        process.Dispose();
+
                     }
                 }
             }
