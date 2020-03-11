@@ -32,13 +32,13 @@
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="NLog" Version="4.6.8" />
-    <PackageReference Include="SciSharp.TensorFlow.Redist" Version="1.15.0" />
+    <PackageReference Include="SciSharp.TensorFlow.Redist" Version="1.14.0" />
     <PackageReference Include="SharpZipLib" Version="1.2.0" />
     <!--<PackageReference Include="NumSharp" Version="0.20.5" />-->
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
     <PackageReference Include="System.Security.Permissions" Version="4.7.0" />
-    <PackageReference Include="TensorFlow.NET" Version="0.14.2" />
+    <PackageReference Include="TensorFlow.NET" Version="0.13.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -61,15 +61,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="ImageClassificationRetrainer.py">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="InceptionV3.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

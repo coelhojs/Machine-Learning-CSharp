@@ -20,11 +20,6 @@ namespace MachineLearningToolkit
         private static string logPath = "";
         private static string modelDir = "";
         private static string outputDir = "";
-        private static string retrainerPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "ImageClassificationRetrainer.py");
-        private static string trainDir = "";
-        private static string trainImagesDir = "";
-        private static int trainingSteps = 0;
-        private static string tfhub_module_path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "InceptionV3.zip");
         internal static Process Process;
         public static void Main(string[] args)
         {
@@ -33,11 +28,7 @@ namespace MachineLearningToolkit
                 if (args.Length == 0)
                 {
                     Console.WriteLine("Informe a função que você deseja utilizar" +
-                        "'ImageClassification', 'ObjectDetection' ou 'ClassificationRetrainer'");
-                    //Console.WriteLine("Informe os seguintes argumentos:\n" +
-                    //    "--modelDir [Path absoluto ate a pasta que contem o grafo e o label map]\n" +
-                    //    "--outputDir [Path de uma pasta em que serao armazenados os resultados temporariamente]\n" +
-                    //    "--listFile [Path para o arquivo serializado com a lista de imagens e quadrantes.");
+                        "'ImageClassification', 'ObjectDetection'");
                 }
 
                 for (int i = 0; i < args.Length; i++)
@@ -60,15 +51,6 @@ namespace MachineLearningToolkit
                             break;
                         case "--labelFile":
                             labelFile = PathNormalizer.NormalizeFilePath(args[i + 1]);
-                            break;
-                        case "--workspaceDir":
-                            trainDir = PathNormalizer.NormalizeDirectory(args[i + 1]);
-                            break;
-                        case "--imagesDir":
-                            trainImagesDir = PathNormalizer.NormalizeDirectory(args[i + 1]);
-                            break;
-                        case "--trainingSteps":
-                            trainingSteps = int.Parse(args[i + 1]);
                             break;
                         case "--logPath":
                             if (args[i + 1] != "undefined")
@@ -97,12 +79,6 @@ namespace MachineLearningToolkit
 
                 // Apply config           
                 NLog.LogManager.Configuration = config;
-                if (args[0] != "ImageClassificationRetrainer")
-                {
-                    if (string.IsNullOrEmpty(modelDir) || string.IsNullOrEmpty(outputDir) || string.IsNullOrEmpty(listFile))
-                        Log.Error("Informe os parametros --modelDir, --listFile --outputDir");
-                }
-
                 if (args[0] == "ObjectDetection")
                 {
                     try
@@ -165,62 +141,6 @@ namespace MachineLearningToolkit
                     catch (Exception ex)
                     {
                         Log.Error($"Houve um erro na classificação de imagens: {ex.Message}");
-                    }
-                }
-                else if (args[0] == "ImageClassificationRetrainer")
-                {
-                    var process = new Process();
-
-                    try
-                    {
-                        string command = $"python {retrainerPath} --how_many_training_steps {trainingSteps} --image_dir {trainImagesDir} --destination_model_dir {outputDir} --log_path {logPath} --workspace_dir {trainDir} --tfhub_module_path {tfhub_module_path}";
-
-                        var processInfo = new ProcessStartInfo("cmd.exe", "/c " + command);
-                        processInfo.CreateNoWindow = true;
-                        processInfo.UseShellExecute = false;
-                        processInfo.RedirectStandardError = true;
-                        processInfo.RedirectStandardOutput = true;
-
-                        process = Process.Start(processInfo);
-
-                        process?.WaitForExit();
-
-                        string output = "";
-
-                        process.OutputDataReceived += (object sender, DataReceivedEventArgs e) =>
-                            Console.WriteLine("output>>" + e.Data);
-                        process.BeginOutputReadLine();
-
-                        process.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
-                            Console.WriteLine("error>>" + e.Data);
-                        process.BeginErrorReadLine();
-
-                        if (File.Exists($"{outputDir}\\retrained_graph.pb") && File.Exists($"{outputDir}\\label_map.txt"))
-                        {
-                            Console.WriteLine(outputDir);
-                        }
-                        else
-                        {
-                            string message = $"Houve um erro no processo de retreinamento do modelo de classificação de imagens: {process?.StandardError.ReadToEnd()}";
-                            Log.Error(message);
-                            throw new Exception(message);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        if (ex.Message.Contains("Directory not empty"))
-                        {
-                            Log.Error($"Feche todas as aplicações ou visualizador de arquivos que estiverem utilizando o diretório de treinamento: {ex.Message}");
-                        }
-
-                        Directory.Delete(outputDir, true);
-                        Directory.Delete(trainDir, true);
-                    }
-                    finally
-                    {
-                        process.Close();
-                        process.Dispose();
-
                     }
                 }
             }
