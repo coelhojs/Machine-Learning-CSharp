@@ -9,7 +9,7 @@ namespace Tests
     [TestClass]
     public class ImageClassificationTests
     {
-        static string ModelDir = @"C:\POD-VERA\MachineLearningModels\vera_species";
+        static string ModelDir = @"C:\POD-VERA\MachineLearningModels\vera_species_v1";
         static string OutputDir = "C:\\temp";
         static string OutputFile = Path.Combine(OutputDir, "Request.ImageClassification");
 
@@ -66,7 +66,7 @@ namespace Tests
         {
             string requestPath = RequestJsonFileGenerator();
 
-            Program.Main(new string[] { "ImageClassification", "--modelDir", @"C:\POD-VERA\MachineLearningModels\vera_species",
+            Program.Main(new string[] { "ImageClassification", "--modelDir", @"C:\POD-VERA\MachineLearningModels\vera_species_v1",
                 "--listFile", requestPath, "--outputDir", "C:\\temp", "--logPath", "C:\\Logs\\MachineLearningToolkit.log" });
 
             //List<string> imagesList = RequestJsonFileReader(requestPath);

@@ -114,32 +114,33 @@ namespace MachineLearningToolkit
         {
             var detectionsList = new List<DetectionInference>();
 
-            Bitmap bitmap = new Bitmap(Security.GrantAccess(Path.GetFullPath(imagePath)));
-
-            var detectionClasses = np.squeeze(resultArr[3]).GetData<float>();
-            var detectionScores = resultArr[2].AsIterator<float>();
-            var detectionBoxes = resultArr[1].GetData<float>().ToArray();
-
-            var scores = detectionScores.Where(score => score > MIN_SCORE).ToArray();
-            var classes = detectionClasses.Take(scores.Length).ToArray();
-
-            for (int i = 0; i < scores.Length; i++)
+            using (Bitmap bitmap = new Bitmap(Security.GrantAccess(Path.GetFullPath(imagePath))))
             {
-                detectionsList.Add(new DetectionInference()
+                var detectionClasses = np.squeeze(resultArr[3]).GetData<float>();
+                var detectionScores = resultArr[2].AsIterator<float>();
+                var detectionBoxes = resultArr[1].GetData<float>().ToArray();
+
+                var scores = detectionScores.Where(score => score > MIN_SCORE).ToArray();
+                var classes = detectionClasses.Take(scores.Length).ToArray();
+
+                for (int i = 0; i < scores.Length; i++)
                 {
-                    BoundingBox = CreateReactangle(bitmap, detectionBoxes, i),
-                    Class = Labels.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),
-                    Image = imagePath,
-                    Score = scores[i]
-                });
-            }
+                    detectionsList.Add(new DetectionInference()
+                    {
+                        BoundingBox = CreateReactangle(bitmap, detectionBoxes, i),
+                        Class = Labels.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),
+                        Image = imagePath,
+                        Score = scores[i]
+                    });
+                }
 
-            return new Result()
-            {
-                DateTime = DateTime.Now,
-                NumDetections = scores.Length,
-                Results = detectionsList
-            };
+                return new Result()
+                {
+                    DateTime = DateTime.Now,
+                    NumDetections = scores.Length,
+                    Results = detectionsList
+                };
+            }
         }
 
         private PbtxtItems LoadLabels(string modelDir, string labelFile)

@@ -185,6 +185,16 @@ namespace MachineLearningToolkit
 
                         process?.WaitForExit();
 
+                        string output = "";
+
+                        process.OutputDataReceived += (object sender, DataReceivedEventArgs e) =>
+                            Console.WriteLine("output>>" + e.Data);
+                        process.BeginOutputReadLine();
+
+                        process.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
+                            Console.WriteLine("error>>" + e.Data);
+                        process.BeginErrorReadLine();
+
                         if (File.Exists($"{outputDir}\\retrained_graph.pb") && File.Exists($"{outputDir}\\label_map.txt"))
                         {
                             Console.WriteLine(outputDir);
