@@ -114,7 +114,7 @@ namespace MachineLearningToolkit
             {
                 Classifications = classificationResults,
                 DateTime = DateTime.Now,
-                Image = image
+                ImagePath = image
             };
         }
 

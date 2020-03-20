@@ -129,7 +129,7 @@ namespace MachineLearningToolkit
                     {
                         BoundingBox = CreateReactangle(bitmap, detectionBoxes, i),
                         Class = Labels.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),
-                        Image = imagePath,
+                        ImagePath = imagePath,
                         Score = scores[i]
                     });
                 }
