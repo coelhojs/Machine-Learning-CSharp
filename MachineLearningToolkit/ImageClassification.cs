@@ -37,6 +37,8 @@ namespace MachineLearningToolkit
                 var graph = new Graph();
                 graph.Import(Security.GrantAccess(Path.Combine(ModelDir, graphFile)));
 
+                Log.Info($"Modelo carregado do diretório {ModelDir} com sucesso.");
+
                 return graph;
             }
             catch (Exception ex)
@@ -50,7 +52,9 @@ namespace MachineLearningToolkit
         {
             try
             {
-                return File.ReadAllLines(Security.GrantAccess(Path.Join(modelDir, labelFile)));
+                var labels = File.ReadAllLines(Security.GrantAccess(Path.Join(modelDir, labelFile)));
+                Log.Info($"Labels do modelo carregadas: {labels.ToString()}");
+                return Labels;
             }
             catch (Exception ex)
             {
@@ -71,6 +75,8 @@ namespace MachineLearningToolkit
 
                 foreach (var image in list)
                 {
+                    Log.Info($"Lendo imagem {image}");
+
                     NDArray imgArr = ReadTensorFromImageFile(Security.GrantAccess(Path.GetFullPath(image)));
 
                     using (var sess = tf.Session(Graph))
@@ -96,6 +102,8 @@ namespace MachineLearningToolkit
 
             var classificationResults = new Dictionary<string, float>();
 
+            Log.Info($"Executando classificação");
+
             var results = sess.run(output_operation.outputs[0], (input_operation.outputs[0], imgArr));
             results = np.squeeze(results);
 
@@ -109,6 +117,8 @@ namespace MachineLearningToolkit
             {
                 classificationResults.Add(Labels[(int)idx], results[(int)idx]);
             }
+
+            Log.Info($"Imagem {Path.GetFileName(image)} classificada como {classificationResults.Keys.First()} com probabilidade de {classificationResults.Values.First()}");
 
             return new ClassificationInference()
             {

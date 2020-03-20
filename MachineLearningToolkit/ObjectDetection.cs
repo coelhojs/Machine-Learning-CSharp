@@ -35,6 +35,8 @@ namespace MachineLearningToolkit
 
                 foreach (var image in list)
                 {
+                    Log.Info($"Lendo imagem {image}");
+
                     NDArray imgArr = ReadTensorFromImageFile(Security.GrantAccess(Path.GetFullPath(image)));
 
                     using (var sess = tf.Session(Graph))
@@ -54,6 +56,8 @@ namespace MachineLearningToolkit
             {
                 var graph = new Graph().as_default();
                 graph.Import(Security.GrantAccess(Path.Combine(ModelDir, graphFile)));
+
+                Log.Info($"Modelo carregado do diretório {ModelDir} com sucesso.");
 
                 return graph;
             }
@@ -76,6 +80,8 @@ namespace MachineLearningToolkit
                 Tensor tensorClasses = graph.OperationByName("detection_classes");
                 Tensor imgTensor = graph.OperationByName("image_tensor");
                 Tensor[] outTensorArr = new Tensor[] { tensorNum, tensorBoxes, tensorScores, tensorClasses };
+
+                Log.Info($"Executando detecção");
 
                 var results = sess.run(outTensorArr, new FeedItem(imgTensor, imgArr));
 
@@ -125,14 +131,20 @@ namespace MachineLearningToolkit
 
                 for (int i = 0; i < scores.Length; i++)
                 {
-                    detectionsList.Add(new DetectionInference()
+                    var detection = new DetectionInference()
                     {
                         BoundingBox = CreateReactangle(bitmap, detectionBoxes, i),
                         Class = Labels.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),
                         ImagePath = imagePath,
                         Score = scores[i]
-                    });
+                    };
+
+                    detectionsList.Add(detection);
+
+                    Log.Info($"{detection.Class} detectado(a) na imagem {Path.GetFileName(detection.ImagePath)} com probabilidade de {detection.Score}");
                 }
+
+                Log.Info($"{scores.Length} objetos foram detectados na imagem {imagePath} e serão incluídos no arquivo de resposta");
 
                 return new Result()
                 {
@@ -148,7 +160,11 @@ namespace MachineLearningToolkit
             try
             {
                 // get pbtxt items
-                return PbtxtParser.ParsePbtxtFile(Security.GrantAccess(Path.Combine(modelDir, labelFile)));
+                var labels = PbtxtParser.ParsePbtxtFile(Security.GrantAccess(Path.Combine(modelDir, labelFile)));
+
+                Log.Info($"Labels do modelo carregadas: {labels.items.ToArray().ToString()}");
+
+                return labels;
             }
             catch (Exception ex)
             {

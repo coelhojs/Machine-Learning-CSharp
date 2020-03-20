@@ -102,7 +102,7 @@ namespace MachineLearningToolkit
 
                         JsonUtil<List<Result>>.WriteJsonOnFile(results, outputFile);
 
-                        Log.Info("Detecção de objetos concluída.");
+                        Log.Info("Detecção de objetos concluída.\n");
 
                         Console.WriteLine(outputFile);
                     }
@@ -134,7 +134,7 @@ namespace MachineLearningToolkit
 
                         JsonUtil<List<ClassificationInference>>.WriteJsonOnFile(results, outputFile);
 
-                        Log.Info("Classificação de imagens concluída.");
+                        Log.Info("Classificação de imagens concluída.\n");
 
                         Console.WriteLine(outputFile);
                     }
