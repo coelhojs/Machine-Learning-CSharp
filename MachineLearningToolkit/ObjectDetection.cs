@@ -35,7 +35,7 @@ namespace MachineLearningToolkit
 
                 foreach (var image in list)
                 {
-                    Log.Info($"Lendo imagem {image}");
+                    Log.Info($"Lendo imagem {Path.GetFileName(image)}");
 
                     NDArray imgArr = ReadTensorFromImageFile(Security.GrantAccess(Path.GetFullPath(image)));
 
@@ -144,7 +144,7 @@ namespace MachineLearningToolkit
                     Log.Info($"{detection.Class} detectado(a) na imagem {Path.GetFileName(detection.ImagePath)} com probabilidade de {detection.Score}");
                 }
 
-                Log.Info($"{scores.Length} objetos foram detectados na imagem {imagePath} e serão incluídos no arquivo de resposta");
+                Log.Info($"{scores.Length} objetos foram detectados na imagem {Path.GetFileName(imagePath)} e serão incluídos no arquivo de resposta");
 
                 return new Result()
                 {
@@ -162,7 +162,7 @@ namespace MachineLearningToolkit
                 // get pbtxt items
                 var labels = PbtxtParser.ParsePbtxtFile(Security.GrantAccess(Path.Combine(modelDir, labelFile)));
 
-                Log.Info($"Labels do modelo carregadas: {labels.items.ToArray().ToString()}");
+                Log.Info($"Labels do modelo carregadas: {String.Join(", ", labels.items)}");
 
                 return labels;
             }

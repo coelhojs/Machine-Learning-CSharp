@@ -53,8 +53,8 @@ namespace MachineLearningToolkit
             try
             {
                 var labels = File.ReadAllLines(Security.GrantAccess(Path.Join(modelDir, labelFile)));
-                Log.Info($"Labels do modelo carregadas: {labels.ToString()}");
-                return Labels;
+                Log.Info($"Labels do modelo carregadas: {String.Join(", ", labels)}");
+                return labels;
             }
             catch (Exception ex)
             {
@@ -118,7 +118,7 @@ namespace MachineLearningToolkit
                 classificationResults.Add(Labels[(int)idx], results[(int)idx]);
             }
 
-            Log.Info($"Imagem {Path.GetFileName(image)} classificada como {classificationResults.Keys.First()} com probabilidade de {classificationResults.Values.First()}");
+            //Log.Info($"Imagem {Path.GetFileName(image)} classificada como {classificationResults.First().Key} com probabilidade de {classificationResults.First().Value}");
 
             return new ClassificationInference()
             {
