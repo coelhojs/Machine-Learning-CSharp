@@ -9,7 +9,8 @@ namespace Tests
     [TestClass]
     public class ObjectDetectionTests
     {
-        static string ModelDir = @"C:\development\Vera\vera_base_trees\45000";
+        //static string ModelDir = @"C:\development\Vera\vera_base_trees\45000";
+        static string ModelDir = @"C:\development\Vera\vera_poles_trees_v1";
         static string OutputDir = "C:\\temp\\";
         static string OutputFile = Path.Combine(OutputDir, "Request.ObjectDetection");
 
