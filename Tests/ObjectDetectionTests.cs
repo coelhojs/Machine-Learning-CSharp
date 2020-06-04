@@ -9,8 +9,8 @@ namespace Tests
     [TestClass]
     public class ObjectDetectionTests
     {
-        static string ModelDir = @"C:\POD-VERA\MachineLearningModels\vera_equipments_45595";
-        static string OutputDir = "C:\\development\\";
+        static string ModelDir = @"C:\development\Vera\vera_base_trees\45000";
+        static string OutputDir = "C:\\temp\\";
         static string OutputFile = Path.Combine(OutputDir, "Request.ObjectDetection");
 
         [TestMethod]
@@ -20,7 +20,7 @@ namespace Tests
 
             for (int i = 0; i < 3; i++)
             {
-                testList.Add("C:\\development\\poste.jpg");
+                testList.Add("C:\\temp\\arvore.jpg");
             }
 
             JsonUtil<List<string>>.WriteJsonOnFile(testList, OutputFile);

@@ -123,7 +123,7 @@ namespace MachineLearningToolkit
             return new ClassificationInference()
             {
                 Classifications = classificationResults,
-                DateTime = DateTime.Now,
+                DateTime = DateTime.Now.ToString(),
                 ImagePath = image
             };
         }

@@ -148,7 +148,7 @@ namespace MachineLearningToolkit
 
                 return new Result()
                 {
-                    DateTime = DateTime.Now,
+                    DateTime = DateTime.Now.ToString(),
                     NumDetections = scores.Length,
                     Results = detectionsList
                 };
