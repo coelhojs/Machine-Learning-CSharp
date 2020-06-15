@@ -136,7 +136,8 @@ namespace MachineLearningToolkit
                         BoundingBox = CreateReactangle(bitmap, detectionBoxes, i),
                         Class = Labels.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),
                         ImagePath = imagePath,
-                        Score = scores[i]
+                        Score = scores[i],
+                        DateTime = DateTime.Now
                     };
 
                     detectionsList.Add(detection);
@@ -148,7 +149,7 @@ namespace MachineLearningToolkit
 
                 return new Result()
                 {
-                    DateTime = DateTime.Now.ToString(),
+                    DateTime = DateTime.Now,
                     NumDetections = scores.Length,
                     Results = detectionsList
                 };
