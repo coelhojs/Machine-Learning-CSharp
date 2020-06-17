@@ -12,13 +12,15 @@ namespace MachineLearningToolkit
 {
     public class Program
     {
-        private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private static string graphFile = null;
         private static string labelFile = null;
         private static string listFile = "";
         private static string logPath = "";
+        private static int maxDetections = 100;
         private static string modelDir = "";
+        private static float minScore = 0.7f;
         private static string outputDir = "";
         internal static Process Process;
         public static void Main(string[] args)
@@ -51,6 +53,12 @@ namespace MachineLearningToolkit
                             break;
                         case "--labelFile":
                             labelFile = PathNormalizer.NormalizeFilePath(args[i + 1]);
+                            break;
+                        case "--maxDetections":
+                            maxDetections = int.Parse(args[i + 1], System.Globalization.CultureInfo.InvariantCulture);
+                            break;
+                        case "--minScore":
+                            minScore = float.Parse(args[i + 1], System.Globalization.CultureInfo.InvariantCulture);
                             break;
                         case "--logPath":
                             if (args[i + 1] != "undefined")
@@ -89,11 +97,11 @@ namespace MachineLearningToolkit
 
                         if (string.IsNullOrEmpty(graphFile) && string.IsNullOrEmpty(labelFile))
                         {
-                            inference = new ObjectDetection(modelDir);
+                            inference = new ObjectDetection(modelDir, maxDetections, minScore);
                         }
                         else
                         {
-                            inference = new ObjectDetection(modelDir, graphFile, labelFile);
+                            inference = new ObjectDetection(modelDir, maxDetections, minScore, graphFile, labelFile);
                         }
 
                         var results = inference.Inference(listFile);

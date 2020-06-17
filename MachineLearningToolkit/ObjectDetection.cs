@@ -13,14 +13,17 @@ namespace MachineLearningToolkit
 {
     public class ObjectDetection
     {
-        private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private const float MIN_SCORE = 0.7f;
         private Graph Graph;
         private PbtxtItems Labels;
+        private int MaxDetections;
+        private float MinScore;
         private string ModelDir;
-        public ObjectDetection(string modelDir, string graphFile = "frozen_inference_graph.pb", string labelFile = "label_map.pbtxt")
+        public ObjectDetection(string modelDir, int maxDetections, float minScore, string graphFile = "frozen_inference_graph.pb", string labelFile = "label_map.pbtxt")
         {
+            MaxDetections = maxDetections;
+            MinScore = minScore;
             ModelDir = modelDir;
             Graph = ImportGraph(graphFile);
             Labels = LoadLabels(modelDir, labelFile);
@@ -126,17 +129,19 @@ namespace MachineLearningToolkit
                 var detectionScores = resultArr[2].AsIterator<float>();
                 var detectionBoxes = resultArr[1].GetData<float>().ToArray();
 
-                var scores = detectionScores.Where(score => score > MIN_SCORE).ToArray();
+                var scores = detectionScores.Where(score => score > MinScore).ToArray();
                 var classes = detectionClasses.Take(scores.Length).ToArray();
 
-                for (int i = 0; i < scores.Length; i++)
+                if (MaxDetections == 1 && scores.Length > 0)
                 {
+                    int index = FindHighestScore(scores);
+
                     var detection = new DetectionInference()
                     {
-                        BoundingBox = CreateReactangle(bitmap, detectionBoxes, i),
-                        Class = Labels.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),
+                        BoundingBox = CreateReactangle(bitmap, detectionBoxes, index),
+                        Class = Labels.items.Where(w => w.id == detectionClasses[index]).Select(s => s.display_name).FirstOrDefault(),
                         ImagePath = imagePath,
-                        Score = scores[i],
+                        Score = scores[index],
                         DateTime = DateTime.Now
                     };
 
@@ -144,13 +149,31 @@ namespace MachineLearningToolkit
 
                     Log.Info($"{detection.Class} detectado(a) na imagem {Path.GetFileName(detection.ImagePath)} com probabilidade de {detection.Score}");
                 }
+                else
+                {
+                    for (int i = 0; i < scores.Length; i++)
+                    {
+                        var detection = new DetectionInference()
+                        {
+                            BoundingBox = CreateReactangle(bitmap, detectionBoxes, i),
+                            Class = Labels.items.Where(w => w.id == detectionClasses[i]).Select(s => s.display_name).FirstOrDefault(),
+                            ImagePath = imagePath,
+                            Score = scores[i],
+                            DateTime = DateTime.Now
+                        };
+
+                        detectionsList.Add(detection);
+
+                        Log.Info($"{detection.Class} detectado(a) na imagem {Path.GetFileName(detection.ImagePath)} com probabilidade de {detection.Score}");
+                    }
+                }
 
                 Log.Info($"{scores.Length} objetos foram detectados na imagem {Path.GetFileName(imagePath)} e serão incluídos no arquivo de resposta");
 
                 return new Result()
                 {
                     DateTime = DateTime.Now,
-                    NumDetections = scores.Length,
+                    NumDetections = detectionsList.Count,
                     Results = detectionsList
                 };
             }
@@ -193,6 +216,21 @@ namespace MachineLearningToolkit
             };
 
             return rect;
+        }
+
+        private int FindHighestScore(float[] scores)
+        {
+            float highestValue = 0.0f;
+            int indexOf = 0;
+            for (int i = 0; i < scores.Length; i++)
+            {
+                if (scores[i] > highestValue)
+                {
+                    highestValue = scores[i];
+                    indexOf = i;
+                }
+            }
+            return indexOf;
         }
     }
 }
