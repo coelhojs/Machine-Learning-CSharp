@@ -916,6 +916,8 @@ namespace Tests
 
             Program.Main(new string[] { "ObjectDetection", "--modelDir", ModelDir, "--maxDetections", "1", "--minScore", "0.3",
                 "--listFile", requestPath, "--outputDir", OutputDir, "--logPath", "C:\\Logs\\MachineLearningToolkit.log" });
+            // "--drawOnImages", 'true'
+
 
             //ObjectDetection 
             //= new ObjectDetection(ModelDir);

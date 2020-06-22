@@ -14,6 +14,7 @@ namespace MachineLearningToolkit
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
+        private static bool drawImages = false;
         private static string graphFile = null;
         private static string labelFile = null;
         private static string listFile = "";
@@ -39,14 +40,8 @@ namespace MachineLearningToolkit
 
                     switch (value)
                     {
-                        case "--modelDir":
-                            modelDir = PathNormalizer.NormalizeDirectory(args[i + 1]);
-                            break;
-                        case "--listFile":
-                            listFile = PathNormalizer.NormalizeFilePath(args[i + 1]);
-                            break;
-                        case "--outputDir":
-                            outputDir = PathNormalizer.NormalizeDirectory(args[i + 1]);
+                        case "--drawImages":
+                            drawImages = bool.Parse(args[i + 1]);
                             break;
                         case "--graphFile":
                             graphFile = PathNormalizer.NormalizeFilePath(args[i + 1]);
@@ -54,11 +49,8 @@ namespace MachineLearningToolkit
                         case "--labelFile":
                             labelFile = PathNormalizer.NormalizeFilePath(args[i + 1]);
                             break;
-                        case "--maxDetections":
-                            maxDetections = int.Parse(args[i + 1], System.Globalization.CultureInfo.InvariantCulture);
-                            break;
-                        case "--minScore":
-                            minScore = float.Parse(args[i + 1], System.Globalization.CultureInfo.InvariantCulture);
+                        case "--listFile":
+                            listFile = PathNormalizer.NormalizeFilePath(args[i + 1]);
                             break;
                         case "--logPath":
                             if (args[i + 1] != "undefined")
@@ -69,6 +61,18 @@ namespace MachineLearningToolkit
                             {
                                 logPath = "";
                             }
+                            break;
+                        case "--maxDetections":
+                            maxDetections = int.Parse(args[i + 1], System.Globalization.CultureInfo.InvariantCulture);
+                            break;
+                        case "--minScore":
+                            minScore = float.Parse(args[i + 1], System.Globalization.CultureInfo.InvariantCulture);
+                            break;
+                        case "--modelDir":
+                            modelDir = PathNormalizer.NormalizeDirectory(args[i + 1]);
+                            break;
+                        case "--outputDir":
+                            outputDir = PathNormalizer.NormalizeDirectory(args[i + 1]);
                             break;
                     }
                 }
@@ -104,7 +108,7 @@ namespace MachineLearningToolkit
                             inference = new ObjectDetection(modelDir, maxDetections, minScore, graphFile, labelFile);
                         }
 
-                        var results = inference.Inference(listFile);
+                        var results = inference.Inference(listFile, drawImages);
 
                         string outputFile = Path.Combine(outputDir, "Result.ObjectDetection");
 

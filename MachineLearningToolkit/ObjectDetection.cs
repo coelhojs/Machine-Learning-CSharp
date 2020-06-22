@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using MachineLearningToolkit.Utility;
@@ -22,13 +24,13 @@ namespace MachineLearningToolkit
         private string ModelDir;
         public ObjectDetection(string modelDir, int maxDetections, float minScore, string graphFile = "frozen_inference_graph.pb", string labelFile = "label_map.pbtxt")
         {
+            Graph = ImportGraph(graphFile);
+            Labels = LoadLabels(modelDir, labelFile);
             MaxDetections = maxDetections;
             MinScore = minScore;
             ModelDir = modelDir;
-            Graph = ImportGraph(graphFile);
-            Labels = LoadLabels(modelDir, labelFile);
         }
-        public List<Result> Inference(string listPath)
+        public List<Result> Inference(string listPath, bool drawImages = false)
         {
             try
             {
@@ -43,7 +45,7 @@ namespace MachineLearningToolkit
                     NDArray imgArr = ReadTensorFromImageFile(Security.GrantAccess(Path.GetFullPath(image)));
 
                     using (var sess = tf.Session(Graph))
-                        Results.Add(Predict(sess, imgArr, image));
+                        Results.Add(Predict(sess, imgArr, image, drawImages));
                 }
                 return Results;
             }
@@ -71,7 +73,7 @@ namespace MachineLearningToolkit
                 throw ex;
             }
         }
-        private Result Predict(Session sess, NDArray imgArr, string image)
+        private Result Predict(Session sess, NDArray imgArr, string image, bool drawImages)
         {
             try
             {
@@ -88,7 +90,7 @@ namespace MachineLearningToolkit
 
                 var results = sess.run(outTensorArr, new FeedItem(imgTensor, imgArr));
 
-                return ParseResults(results, image);
+                return ParseResults(results, image, drawImages);
             }
             catch (FileNotFoundException ex)
             {
@@ -119,7 +121,7 @@ namespace MachineLearningToolkit
                 return sess.run(dims_expander);
         }
 
-        private Result ParseResults(NDArray[] resultArr, string imagePath)
+        private Result ParseResults(NDArray[] resultArr, string imagePath, bool drawImages)
         {
             var detectionsList = new List<DetectionInference>();
 
@@ -169,14 +171,16 @@ namespace MachineLearningToolkit
                 }
 
                 Log.Info($"{scores.Length} objetos foram detectados na imagem {Path.GetFileName(imagePath)} e serão incluídos no arquivo de resposta");
-
-                return new Result()
-                {
-                    DateTime = DateTime.Now,
-                    NumDetections = detectionsList.Count,
-                    Results = detectionsList
-                };
             }
+
+            //aqui
+
+            return new Result()
+            {
+                DateTime = DateTime.Now,
+                NumDetections = detectionsList.Count,
+                Results = detectionsList
+            };
         }
 
         private PbtxtItems LoadLabels(string modelDir, string labelFile)
