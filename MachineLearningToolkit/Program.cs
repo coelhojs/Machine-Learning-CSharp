@@ -101,11 +101,11 @@ namespace MachineLearningToolkit
 
                         if (string.IsNullOrEmpty(graphFile) && string.IsNullOrEmpty(labelFile))
                         {
-                            inference = new ObjectDetection(modelDir, maxDetections, minScore);
+                            inference = new ObjectDetection(modelDir, maxDetections, minScore, outputDir);
                         }
                         else
                         {
-                            inference = new ObjectDetection(modelDir, maxDetections, minScore, graphFile, labelFile);
+                            inference = new ObjectDetection(modelDir, maxDetections, minScore, outputDir, graphFile, labelFile);
                         }
 
                         var results = inference.Inference(listFile, drawImages);

@@ -9,7 +9,7 @@ namespace Tests
     [TestClass]
     public class ObjectDetectionTests
     {
-        static string ModelDir = @"C:\Users\cristiano.souza\OneDrive - Concert Tecnologies\Modelos_Machine_Learning\vera_poles_trees_v1";
+        static string ModelDir = @"C:\Users\cristiano.souza\OneDrive - Concert Tecnologies\Modelos_Machine_Learning\vera_base_poles_v1";
         static string OutputDir = "C:\\temp\\";
         static string OutputFile = Path.Combine(OutputDir, "Request.ObjectDetection");
 
@@ -915,9 +915,7 @@ namespace Tests
             //List<string> imagesList = RequestJsonFileReader(requestPath);
 
             Program.Main(new string[] { "ObjectDetection", "--modelDir", ModelDir, "--maxDetections", "1", "--minScore", "0.3",
-                "--listFile", requestPath, "--outputDir", OutputDir, "--logPath", "C:\\Logs\\MachineLearningToolkit.log" });
-            // "--drawOnImages", 'true'
-
+                "--listFile", requestPath, "--outputDir", OutputDir, "--logPath", "C:\\Logs\\MachineLearningToolkit.log", "--drawImages", "true" });
 
             //ObjectDetection 
             //= new ObjectDetection(ModelDir);
@@ -930,7 +928,5 @@ namespace Tests
 
             //Assert.IsNotNull(parsedResults);
         }
-
-
     }
 }
